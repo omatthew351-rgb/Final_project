@@ -23,23 +23,23 @@ class Player:
     def update(self, keys_held: set[int]) -> None:
         ax, ay = 0, 0
         if keys_held[pygame.K_UP]:
-            ay -= 0.5
+            ay -= 1
         if keys_held[pygame.K_DOWN]:
-            ay += 0.5
+            ay += 1
         if keys_held[pygame.K_LEFT]:
-            ax -= 0.5
+            ax -= 1
         if keys_held[pygame.K_RIGHT]:
-            ax += 0.5
+            ax += 1
         if ax != 0 and ay != 0:
-            acceleration = pygame.Vector2(ax, ay).clamp_magnitude(0.5)
+            acceleration = pygame.Vector2(ax, ay).clamp_magnitude(1)
             ax = acceleration.x
             ay = acceleration.y
         self.vx += ax
         self.vy += ay
         self.x += self.vx
         self.y += self.vy
-        self.vx *= 0.9
-        self.vy *= 0.9
+        self.vx *= 0.8
+        self.vy *= 0.8
         if self.x < self.screen.get_width()/32+self.r:
             self.x = self.screen.get_width()/32+self.r
         if self.x > self.screen.get_width()*31/32-self.r:
@@ -48,22 +48,48 @@ class Player:
             self.y = self.screen.get_height()/32+self.r
         if self.y > self.screen.get_height()*31/32-self.r:
             self.y = self.screen.get_height()*31/32-self.r
-        pygame.draw.circle(self.screen, "#ff0000", (self.x, self.y), self.r)
+        pygame.draw.circle(self.screen, "#1f74f5", (self.x, self.y), self.r)
 
 
 class Enemy:
 
-    def __init__(self, x: float, y: float):
-        self.x = x
-        self.y = y
-        self.vx = 1
-        self.vy = 1
+    def __init__(self, screen):
+        self.x = 0
+        self.y = 0
+        self.vx = 0
+        self.vy = 0
+        self.r = 15
+        self.health = 0
+        self.screen = screen
 
-    def update(self, surface: pygame.Surface) -> None:
+    def update(self) -> None:
         self.x += self.vx
         self.y += self.vy
-        pygame.draw.circle(surface, "#00ff00", (self.x, self.y), 15)
+        pygame.draw.circle(self.screen, "#7b0a0a", (self.x, self.y), self.r)
 
+
+class Projectile:
+    def __init__(self, screen, x, y, vx, vy) -> None:
+        self.pos = pygame.Vector2(x, y)
+        self.direction = pygame.Vector2(vx, vy).normalize()
+        self.speed = 8
+        self.r = 3
+        self.screen = screen
+    
+    def update(self):
+        self.pos += self.direction*self.speed
+        pygame.draw.circle(self.screen, "#1f74f5", (self.pos), self.r)
+
+    def in_border(self) -> bool:
+        if self.pos.x < self.screen.get_width()/32+self.r:
+           return True
+        if self.pos.x > self.screen.get_width()*31/32-self.r:
+            return True
+        if self.pos.y < self.screen.get_height()/32+self.r:
+            return True
+        if self.pos.y > self.screen.get_height()*31/32-self.r:
+            return True
+        return False
 
 
 def main():
@@ -74,20 +100,27 @@ def main():
     square_length = screen.get_width()/16
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
+    bullets = []
     while True:
         screen.fill("#000000")
         for y, row in enumerate(grid):
-            for x, idx in enumerate(row):
+            for x, value in enumerate(row):
                 pygame.draw.rect(screen, (100, 100, 100), (x*square_length, y*square_length, square_length, square_length), 3)
 
+        for bullet in bullets:
+            bullet.update()
+        bullets = [bullet for bullet in bullets if not bullet.in_border()]
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
                 pygame.quit()
                 sys.exit()
-            if event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
+            elif event.type == pygame.locals.MOUSEBUTTONDOWN:
+                bullets.append(Projectile(screen, player.x, player.y, event.pos[0]-player.x, event.pos[1]-player.y))
+
         keys_held = pygame.key.get_pressed()
         player.update(keys_held)
     
