@@ -22,13 +22,13 @@ class Player:
 
     def update(self, keys_held: set[int]) -> None:
         ax, ay = 0, 0
-        if keys_held[pygame.K_UP]:
+        if keys_held[pygame.K_UP] or keys_held[pygame.K_w]:
             ay -= 1
-        if keys_held[pygame.K_DOWN]:
+        if keys_held[pygame.K_DOWN] or keys_held[pygame.K_s]:
             ay += 1
-        if keys_held[pygame.K_LEFT]:
+        if keys_held[pygame.K_LEFT] or keys_held[pygame.K_a]:
             ax -= 1
-        if keys_held[pygame.K_RIGHT]:
+        if keys_held[pygame.K_RIGHT] or keys_held[pygame.K_d]:
             ax += 1
         if ax != 0 and ay != 0:
             acceleration = pygame.Vector2(ax, ay).clamp_magnitude(1)
@@ -54,17 +54,19 @@ class Player:
 class Enemy:
 
     def __init__(self, screen):
+        self.r = 20
         self.x = 0
         self.y = 0
-        self.vx = 0
-        self.vy = 0
+        self.vx = 1
+        self.vy = 1
         self.r = 15
         self.health = 0
         self.screen = screen
 
     def update(self) -> None:
         self.x += self.vx
-        self.y += self.vy
+        self.vx *= 0.5
+        self.vy *= 0.5
         pygame.draw.circle(self.screen, "#7b0a0a", (self.x, self.y), self.r)
 
 
