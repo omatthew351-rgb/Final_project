@@ -60,7 +60,7 @@ class Enemy:
         self.vx = 1
         self.vy = 1
         self.r = 15
-        self.health = 0
+        self.health = 3
         self.screen = screen
 
     def update(self) -> None:
@@ -71,12 +71,13 @@ class Enemy:
 
 
 class Projectile:
-    def __init__(self, screen, x, y, vx, vy) -> None:
-        self.pos = pygame.Vector2(x, y)
-        self.direction = pygame.Vector2(vx, vy).normalize()
+    def __init__(self, screen, start_pos, direction, damage) -> None:
+        self.pos = pygame.Vector2(start_pos)
+        self.direction = pygame.Vector2(direction).normalize()
         self.speed = 8
-        self.r = 3
+        self.r = 5
         self.screen = screen
+        self.damage = damage
     
     def update(self):
         self.pos += self.direction*self.speed
@@ -103,15 +104,13 @@ def main():
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
     bullets = []
+    enemies = [Enemy(screen)]
     while True:
         screen.fill("#000000")
         for y, row in enumerate(grid):
             for x, value in enumerate(row):
                 pygame.draw.rect(screen, (100, 100, 100), (x*square_length, y*square_length, square_length, square_length), 3)
 
-        for bullet in bullets:
-            bullet.update()
-        bullets = [bullet for bullet in bullets if not bullet.in_border()]
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
                 pygame.quit()
@@ -121,10 +120,21 @@ def main():
                     pygame.quit()
                     sys.exit()
             elif event.type == pygame.locals.MOUSEBUTTONDOWN:
-                bullets.append(Projectile(screen, player.x, player.y, event.pos[0]-player.x, event.pos[1]-player.y))
+                bullets.append(Projectile(screen, (player.x, player.y), (event.pos[0]-player.x, event.pos[1]-player.y), 3))
 
         keys_held = pygame.key.get_pressed()
         player.update(keys_held)
+        for enemy in enemies:
+            enemy.update()
+        for bullet in bullets.copy():
+            bullet.update()
+            for enemy in enemies.copy():
+                if math.dist((bullet.pos), (enemy.x, enemy.y)) < bullet.r + enemy.r:
+                    enemies[enemies.index(enemy)].health -= bullet.damage
+                    if enemies[enemies.index(enemy)].health <= 0:
+                        enemies.remove(enemy)
+                    bullets.remove(bullet)
+        bullets = [bullet for bullet in bullets if not bullet.in_border()]
     
         pygame.display.flip()
         fps_clock.tick(fps)
