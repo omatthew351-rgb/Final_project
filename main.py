@@ -60,9 +60,7 @@ class Enemy:
         self.health = 3
         self.screen = screen
         self.speed =
-
-
-
+        
     def update(self, player_x, player_y) -> None:
         dist_x = player_x - self.x 
         dist_y = player_y - self.y
