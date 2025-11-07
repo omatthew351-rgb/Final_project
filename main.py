@@ -19,8 +19,9 @@ class Player:
         self.health = 3
         self.screen = screen
         self.r = 20
+        self.tile_length = self.screen.get_height()/10
 
-    def update(self, keys_held: set[int]) -> None:
+    def update(self, keys_held: set[int], door_open=False) -> None:
         ax, ay = 0, 0
         if keys_held[pygame.K_UP] or keys_held[pygame.K_w]:
             ay -= 1
@@ -38,16 +39,52 @@ class Player:
         self.vy += ay
         self.x += self.vx
         self.y += self.vy
+        
+        if door_open:
+            if not (self.tile_length*4+self.r < self.y < self.tile_length*6-self.r): # check in door
+                
+                if self.x < self.tile_length/2+self.r:
+                    if not (self.tile_length*4+self.r < self.y-self.vy/4*5 < self.tile_length*6-self.r): # if was not in door before, normal else push back in the door
+                        self.x = self.tile_length/2+self.r
+                        self.vx = 0
+                    else:
+                        self.y = max(self.tile_length*4+self.r, min(self.tile_length*6-self.r, self.y))
+
+                if self.x > self.screen.get_width()-self.tile_length/2-self.r:
+                    if not (self.tile_length*4+self.r < self.y-self.vy/2*5 < self.tile_length*6-self.r):
+                        self.x = self.screen.get_width()-self.tile_length/2-self.r
+                        self.vx = 0
+                    else:
+                        self.y = max(self.tile_length*4+self.r, min(self.tile_length*6-self.r, self.y))
+                    
+            if not (self.tile_length*7+self.r < self.x < self.tile_length*9-self.r):
+
+                if self.y < self.tile_length/2+self.r:
+                    if not (self.tile_length*7+self.r < self.x-self.vx/4*5 < self.tile_length*9-self.r):
+                        self.y = self.tile_length/2+self.r
+                        self.vy = 0
+                    else:
+                        self.x = max(self.tile_length*7+self.r, min(self.tile_length*9-self.r, self.x))
+                if self.y > self.screen.get_height()-self.tile_length/2-self.r:
+                    if not (self.tile_length*7+self.r < self.x-self.vx/4*5 < self.tile_length*9-self.r):
+                        self.y = self.screen.get_height()-self.tile_length/2-self.r
+                        self.vy = 0
+                    else:
+                        self.x = max(self.tile_length*7+self.r, min(self.tile_length*9-self.r, self.x))
+                    
+        else:
+            if self.x < self.screen.get_width()/32+self.r:
+                self.x = self.screen.get_width()/32+self.r
+            if self.x > self.screen.get_width()*31/32-self.r:
+                self.x = self.screen.get_width()*31/32-self.r
+            if self.y < self.screen.get_height()/32+self.r:
+                self.y = self.screen.get_height()/32+self.r
+            if self.y > self.screen.get_height()*31/32-self.r:
+                self.y = self.screen.get_height()*31/32-self.r
+
         self.vx *= 0.8
         self.vy *= 0.8
-        if self.x < self.screen.get_width()/32+self.r:
-            self.x = self.screen.get_width()/32+self.r
-        if self.x > self.screen.get_width()*31/32-self.r:
-            self.x = self.screen.get_width()*31/32-self.r
-        if self.y < self.screen.get_height()/32+self.r:
-            self.y = self.screen.get_height()/32+self.r
-        if self.y > self.screen.get_height()*31/32-self.r:
-            self.y = self.screen.get_height()*31/32-self.r
+        
         pygame.draw.circle(self.screen, "#1f74f5", (self.x, self.y), self.r)
 
 
@@ -124,8 +161,7 @@ def main():
                 bullets.append(Projectile(screen, (player.x, player.y), (event.pos[0]-player.x, event.pos[1]-player.y), 3))
 
         keys_held = pygame.key.get_pressed()
-        player.update(keys_held)
-
+        player.update(keys_held, True) # currently always open
         for enemy in enemies:
             enemy.update(player.x, player.y)
         for bullet in bullets.copy():
