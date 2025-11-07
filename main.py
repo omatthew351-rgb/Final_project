@@ -91,19 +91,19 @@ class Player:
 class Enemy:
 
     def __init__(self, screen):
-        self.r = 20
-        self.x = 0
-        self.y = 0
-        self.vx = 1
-        self.vy = 1
+        self.x = 100
+        self.y = 100
         self.r = 15
         self.health = 3
         self.screen = screen
+        self.speed = 3
 
-    def update(self) -> None:
-        self.x += self.vx
-        self.vx *= 0.5
-        self.vy *= 0.5
+    def update(self, player_x, player_y) -> None:
+        dist_x = player_x - self.x 
+        dist_y = player_y - self.y
+        length = math.sqrt(dist_x**2 + dist_y**2)
+        self.x += dist_x / length * self.speed
+        self.y += dist_y / length * self.speed
         pygame.draw.circle(self.screen, "#7b0a0a", (self.x, self.y), self.r)
 
 
@@ -139,6 +139,7 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
     square_length = screen.get_width()/16
     player = Player(screen)
+
     grid = [[0 for _ in range(16)] for _ in range(10)]
     bullets = []
     enemies = [Enemy(screen)]
@@ -162,7 +163,7 @@ def main():
         keys_held = pygame.key.get_pressed()
         player.update(keys_held, True) # currently always open
         for enemy in enemies:
-            enemy.update()
+            enemy.update(player.x, player.y)
         for bullet in bullets.copy():
             bullet.update()
             for enemy in enemies.copy():
