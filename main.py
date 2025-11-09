@@ -13,7 +13,7 @@ class Player:
 
     def __init__(self, screen: pygame.Surface):
         self.x = screen.get_width() / 2
-        self.y = screen.get_height() / 2
+        self.y = screen.get_height() / 2+200
         self.vx = 0
         self.vy = 0
         self.health = 3
@@ -90,13 +90,16 @@ class Player:
 
 class Enemy:
 
-    def __init__(self, screen):
-        self.x = 100
-        self.y = 100
-        self.r = 15
-        self.health = 3
+    def __init__(self, screen, r=15, health=3, speed=3, damage=1, cooldown=1000):
+        self.x = random.uniform(50, screen.get_width()-50)
+        self.y = random.uniform(50, screen.get_height()/2)
+        self.r = r
+        self.health = health
         self.screen = screen
-        self.speed = 3
+        self.speed = speed
+        self.damage = damage
+        self.cooldown = cooldown
+        self.last_attack_time = -1000
 
     def update(self, player_x, player_y) -> None:
         dist_x = player_x - self.x 
@@ -131,23 +134,50 @@ class Projectile:
             return True
         return False
 
+def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
+    enemies = []
+    for _ in range(room_num+difficulty):
+        enemies.append(Enemy(screen))
+
+    return enemies
+
+def change_room(screen, player, old_grid, new_grid):
+    old_room = pygame.Surface((screen.get_width(), screen.get_height()))
+    new_room = pygame.Surface((screen.get_width(), screen.get_height()))
+    draw_background(old_room, old_grid)
+    draw_background(new_room, new_grid)
+    for offset in range(0, screen.get_height(), 2):
+        screen.blits([(old_room, (0, offset)), (new_room, (0, offset-screen.get_height()))])
+        pygame.draw.circle(screen, "#1f74f5", (player.x, player.y+offset), player.r)
+        pygame.display.flip()
+        
+    player.y += screen.get_height()
+
+def draw_background(screen, grid):
+    screen.fill("#000000")
+    square_length = screen.get_width()/16
+    for y, row in enumerate(grid):
+        for x, value in enumerate(row):
+            pygame.draw.rect(screen, (100, 100, 100), (x*square_length, y*square_length, square_length, square_length), 3)
 
 def main():
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
-    square_length = screen.get_width()/16
+    
+
     player = Player(screen)
 
     grid = [[0 for _ in range(16)] for _ in range(10)]
+
     bullets = []
-    enemies = [Enemy(screen)]
-    while True:
-        screen.fill("#000000")
-        for y, row in enumerate(grid):
-            for x, value in enumerate(row):
-                pygame.draw.rect(screen, (100, 100, 100), (x*square_length, y*square_length, square_length, square_length), 3)
+    enemies: list[Enemy] = generate_enemies(screen, 5)
+
+
+
+    while player.health > 0:
+        draw_background(screen, grid)
 
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
@@ -161,9 +191,20 @@ def main():
                 bullets.append(Projectile(screen, (player.x, player.y), (event.pos[0]-player.x, event.pos[1]-player.y), 3))
 
         keys_held = pygame.key.get_pressed()
-        player.update(keys_held, True) # currently always open
+        player.update(keys_held, True) # currently always open door
+
+        #change rooms
+        if player.y < 0 and len(enemies) == 0:
+            change_room(screen, player, grid, grid)
+            enemies = generate_enemies(screen, 5)
+
         for enemy in enemies:
             enemy.update(player.x, player.y)
+            if math.dist((player.x, player.y), (enemy.x, enemy.y)) < player.r + enemy.r and pygame.time.get_ticks()-enemy.last_attack_time > enemy.cooldown:
+                player.health -= enemy.damage
+                enemy.last_attack_time = pygame.time.get_ticks()
+
+
         for bullet in bullets.copy():
             bullet.update()
             for enemy in enemies.copy():
@@ -172,6 +213,7 @@ def main():
                     if enemies[enemies.index(enemy)].health <= 0:
                         enemies.remove(enemy)
                     bullets.remove(bullet)
+                    break
         bullets = [bullet for bullet in bullets if not bullet.in_border()]
     
         pygame.display.flip()
