@@ -21,6 +21,7 @@ class Player:
         self.r = 20
         self.tile_length = self.screen.get_height()/10
 
+
     def update(self, keys_held: set[int], door_open=False) -> None:
         ax, ay = 0, 0
         if keys_held[pygame.K_UP] or keys_held[pygame.K_w]:
@@ -39,6 +40,7 @@ class Player:
         self.vy += ay
         self.x += self.vx
         self.y += self.vy
+    
         
         if door_open:
             if not (self.tile_length*4+self.r < self.y < self.tile_length*6-self.r): # check in door
@@ -96,7 +98,7 @@ class Enemy:
         self.r = 15
         self.health = 3
         self.screen = screen
-        self.speed =
+        self.speed = 5
         
     def update(self, player_x, player_y) -> None:
         dist_x = player_x - self.x 
@@ -105,6 +107,13 @@ class Enemy:
         self.x += dist_x / length * self.speed
         self.y += dist_y / length * self.speed
         pygame.draw.circle(self.screen, "#7b0a0a", (self.x, self.y), self.r)
+        # Draw health bar
+        health_bar_length = 30
+        health_bar_height = 5
+        health_bar_x = self.x - health_bar_length / 2
+        health_bar_y = self.y - self.r - 10
+        pygame.draw.rect(self.screen, "#ff0000", (health_bar_x, health_bar_y, health_bar_length, health_bar_height))
+        pygame.draw.rect(self.screen, "#00ff00", (health_bar_x, health_bar_y, health_bar_length * (self.health / 3), health_bar_height))
 
 
 class Projectile:
