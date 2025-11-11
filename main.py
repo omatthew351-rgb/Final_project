@@ -8,7 +8,6 @@ import math
 
 WIDTH, HEIGHT = 800, 600
 
-
 class Player:
 
     def __init__(self, screen: pygame.Surface):
@@ -159,6 +158,14 @@ def change_room(screen, player, old_grid, new_grid):
         screen.blits([(old_room, (0, offset)), (new_room, (0, offset-screen.get_height()))])
         pygame.draw.circle(screen, "#1f74f5", (player.x, player.y+offset), player.r)
         pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.locals.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
         
     player.y += screen.get_height()
 
@@ -167,7 +174,10 @@ def draw_background(screen, grid):
     square_length = screen.get_width()/16
     for y, row in enumerate(grid):
         for x, value in enumerate(row):
-            pygame.draw.rect(screen, (100, 100, 100), (x*square_length, y*square_length, square_length, square_length), 3)
+            if value == 0:
+                pygame.draw.rect(screen, (100, 100, 100), (x*square_length, y*square_length, square_length, square_length), 3)
+            elif value == 1:
+                pygame.draw.rect(screen, (200, 200, 200), (x*square_length, y*square_length, square_length, square_length))
 
 def main():
     fps = 60
@@ -177,9 +187,10 @@ def main():
     
 
     player = Player(screen)
-
     grid = [[0 for _ in range(16)] for _ in range(10)]
 
+
+    grid[3][5] = 1
     bullets = []
     enemies: list[Enemy] = generate_enemies(screen, 5)
 
