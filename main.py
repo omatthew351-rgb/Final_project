@@ -15,7 +15,7 @@ class Player:
         self.y = screen.get_height() / 2+200
         self.vx = 0
         self.vy = 0
-        self.health = 3
+        self.health = 100
         self.screen = screen
         self.r = 20
         self.tile_length = self.screen.get_height()/10
@@ -117,7 +117,6 @@ class Enemy:
         pygame.draw.rect(self.screen, "#ff0000", (health_bar_x, health_bar_y, health_bar_length, health_bar_height))
         pygame.draw.rect(self.screen, "#00ff00", (health_bar_x, health_bar_y, health_bar_length * (self.health / 3), health_bar_height))
 
-
 class Projectile:
     def __init__(self, screen, start_pos, direction, damage) -> None:
         self.pos = pygame.Vector2(start_pos)
@@ -154,6 +153,7 @@ def change_room(screen, player, old_grid, new_grid):
     new_room = pygame.Surface((screen.get_width(), screen.get_height()))
     draw_background(old_room, old_grid)
     draw_background(new_room, new_grid)
+    
     for offset in range(0, screen.get_height(), 2):
         screen.blits([(old_room, (0, offset)), (new_room, (0, offset-screen.get_height()))])
         pygame.draw.circle(screen, "#1f74f5", (player.x, player.y+offset), player.r)
@@ -166,18 +166,22 @@ def change_room(screen, player, old_grid, new_grid):
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
+    
         
     player.y += screen.get_height()
 
 def draw_background(screen, grid):
-    screen.fill("#000000")
+    screen.fill((100, 100, 100))
     square_length = screen.get_width()/16
+    pygame.draw.rect(screen, ("#000000"), (square_length/2, square_length/2, square_length*15, square_length*9))
+    
     for y, row in enumerate(grid):
         for x, value in enumerate(row):
             if value == 0:
                 pygame.draw.rect(screen, (100, 100, 100), (x*square_length, y*square_length, square_length, square_length), 3)
             elif value == 1:
                 pygame.draw.rect(screen, (200, 200, 200), (x*square_length, y*square_length, square_length, square_length))
+    
 
 def main():
     fps = 60
@@ -208,12 +212,10 @@ def main():
                     pygame.quit()
                     sys.exit()
             elif event.type == pygame.locals.MOUSEBUTTONDOWN:
-                bullets.append(Projectile(screen, (player.x, player.y), (event.pos[0]-player.x, event.pos[1]-player.y), 3))
+                bullets.append(Projectile(screen, (player.x, player.y), (event.pos[0]-player.x, event.pos[1]-player.y), 1))
 
         keys_held = pygame.key.get_pressed()
-        player.update(keys_held, True) # currently always open door
-
-        #change rooms
+        player.update(keys_held, len(enemies) == 0) 
         if player.y < 0 and len(enemies) == 0:
             change_room(screen, player, grid, grid)
             enemies = generate_enemies(screen, 5)
