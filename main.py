@@ -8,18 +8,18 @@ import math
 
 WIDTH, HEIGHT = 800, 600
 
+
 class Player:
 
     def __init__(self, screen: pygame.Surface):
         self.x = screen.get_width() / 2
-        self.y = screen.get_height() / 2+200
+        self.y = screen.get_height() / 2 + 200
         self.vx = 0
         self.vy = 0
         self.health = 100
         self.screen = screen
         self.r = 20
-        self.tile_length = self.screen.get_height()/10
-
+        self.tile_length = self.screen.get_height() / 10
 
     def update(self, keys_held: set[int], door_open=False) -> None:
         ax, ay = 0, 0
@@ -39,67 +39,100 @@ class Player:
         self.vy += ay
         self.x += self.vx
         self.y += self.vy
-    
-        
+
         if door_open:
-            if not (self.tile_length*4+self.r < self.y < self.tile_length*6-self.r): # check in door
-                
-                if self.x < self.tile_length/2+self.r:
-                    if not (self.tile_length*4+self.r < self.y-self.vy/4*5 < self.tile_length*6-self.r): # if was not in door before, normal else push back in the door
-                        self.x = self.tile_length/2+self.r
+            if not (
+                self.tile_length * 4 + self.r < self.y < self.tile_length * 6 - self.r
+            ):  # check in door
+
+                if self.x < self.tile_length / 2 + self.r:
+                    if not (
+                        self.tile_length * 4 + self.r
+                        < self.y - self.vy / 4 * 5
+                        < self.tile_length * 6 - self.r
+                    ):  # if was not in door before, normal else push back in the door
+                        self.x = self.tile_length / 2 + self.r
                         self.vx = 0
                     else:
-                        self.y = max(self.tile_length*4+self.r, min(self.tile_length*6-self.r, self.y))
+                        self.y = max(
+                            self.tile_length * 4 + self.r,
+                            min(self.tile_length * 6 - self.r, self.y),
+                        )
 
-                if self.x > self.screen.get_width()-self.tile_length/2-self.r:
-                    if not (self.tile_length*4+self.r < self.y-self.vy/2*5 < self.tile_length*6-self.r):
-                        self.x = self.screen.get_width()-self.tile_length/2-self.r
+                if self.x > self.screen.get_width() - self.tile_length / 2 - self.r:
+                    if not (
+                        self.tile_length * 4 + self.r
+                        < self.y - self.vy / 2 * 5
+                        < self.tile_length * 6 - self.r
+                    ):
+                        self.x = self.screen.get_width() - self.tile_length / 2 - self.r
                         self.vx = 0
                     else:
-                        self.y = max(self.tile_length*4+self.r, min(self.tile_length*6-self.r, self.y))
-                    
-            if not (self.tile_length*7+self.r < self.x < self.tile_length*9-self.r):
+                        self.y = max(
+                            self.tile_length * 4 + self.r,
+                            min(self.tile_length * 6 - self.r, self.y),
+                        )
 
-                if self.y < self.tile_length/2+self.r:
-                    if not (self.tile_length*7+self.r < self.x-self.vx/4*5 < self.tile_length*9-self.r):
-                        self.y = self.tile_length/2+self.r
+            if not (
+                self.tile_length * 7 + self.r < self.x < self.tile_length * 9 - self.r
+            ):
+
+                if self.y < self.tile_length / 2 + self.r:
+                    if not (
+                        self.tile_length * 7 + self.r
+                        < self.x - self.vx / 4 * 5
+                        < self.tile_length * 9 - self.r
+                    ):
+                        self.y = self.tile_length / 2 + self.r
                         self.vy = 0
                     else:
-                        self.x = max(self.tile_length*7+self.r, min(self.tile_length*9-self.r, self.x))
-                if self.y > self.screen.get_height()-self.tile_length/2-self.r:
-                    if not (self.tile_length*7+self.r < self.x-self.vx/4*5 < self.tile_length*9-self.r):
-                        self.y = self.screen.get_height()-self.tile_length/2-self.r
+                        self.x = max(
+                            self.tile_length * 7 + self.r,
+                            min(self.tile_length * 9 - self.r, self.x),
+                        )
+                if self.y > self.screen.get_height() - self.tile_length / 2 - self.r:
+                    if not (
+                        self.tile_length * 7 + self.r
+                        < self.x - self.vx / 4 * 5
+                        < self.tile_length * 9 - self.r
+                    ):
+                        self.y = (
+                            self.screen.get_height() - self.tile_length / 2 - self.r
+                        )
                         self.vy = 0
                     else:
-                        self.x = max(self.tile_length*7+self.r, min(self.tile_length*9-self.r, self.x))
-                    
+                        self.x = max(
+                            self.tile_length * 7 + self.r,
+                            min(self.tile_length * 9 - self.r, self.x),
+                        )
+
         else:
-                
-                if self.x < self.tile_length/2+self.r:
-                    self.x = self.tile_length/2+self.r
-                    self.vx = 0
-                elif self.x > self.screen.get_width()-self.tile_length/2-self.r:
-                    self.x = self.screen.get_width()-self.tile_length/2-self.r
-                    self.vx = 0
 
-                if self.y < self.tile_length/2+self.r:
-                    self.y = self.tile_length/2+self.r
-                    self.vy = 0
-                if self.y > self.screen.get_height()-self.tile_length/2-self.r:
-                    self.y = self.screen.get_height()-self.tile_length/2-self.r
-                    self.vy = 0
-                  
+            if self.x < self.tile_length / 2 + self.r:
+                self.x = self.tile_length / 2 + self.r
+                self.vx = 0
+            elif self.x > self.screen.get_width() - self.tile_length / 2 - self.r:
+                self.x = self.screen.get_width() - self.tile_length / 2 - self.r
+                self.vx = 0
+
+            if self.y < self.tile_length / 2 + self.r:
+                self.y = self.tile_length / 2 + self.r
+                self.vy = 0
+            if self.y > self.screen.get_height() - self.tile_length / 2 - self.r:
+                self.y = self.screen.get_height() - self.tile_length / 2 - self.r
+                self.vy = 0
+
         self.vx *= 0.8
         self.vy *= 0.8
-        
+
         pygame.draw.circle(self.screen, "#1f74f5", (self.x, self.y), self.r)
 
 
 class Enemy:
 
     def __init__(self, screen, r=15, health=3, speed=3, damage=1, cooldown=1000):
-        self.x = random.uniform(50, screen.get_width()-50)
-        self.y = random.uniform(50, screen.get_height()/2)
+        self.x = random.uniform(50, screen.get_width() - 50)
+        self.y = random.uniform(50, screen.get_height() / 2)
         self.r = r
         self.health = health
         self.screen = screen
@@ -109,7 +142,7 @@ class Enemy:
         self.last_attack_time = -1000
 
     def update(self, player_x, player_y) -> None:
-        dist_x = player_x - self.x 
+        dist_x = player_x - self.x
         dist_y = player_y - self.y
         length = math.sqrt(dist_x**2 + dist_y**2)
         self.x += dist_x / length * self.speed
@@ -120,8 +153,22 @@ class Enemy:
         health_bar_height = 5
         health_bar_x = self.x - health_bar_length / 2
         health_bar_y = self.y - self.r - 10
-        pygame.draw.rect(self.screen, "#ff0000", (health_bar_x, health_bar_y, health_bar_length, health_bar_height))
-        pygame.draw.rect(self.screen, "#00ff00", (health_bar_x, health_bar_y, health_bar_length * (self.health / 3), health_bar_height))
+        pygame.draw.rect(
+            self.screen,
+            "#ff0000",
+            (health_bar_x, health_bar_y, health_bar_length, health_bar_height),
+        )
+        pygame.draw.rect(
+            self.screen,
+            "#00ff00",
+            (
+                health_bar_x,
+                health_bar_y,
+                health_bar_length * (self.health / 3),
+                health_bar_height,
+            ),
+        )
+
 
 class Projectile:
     def __init__(self, screen, start_pos, direction, damage) -> None:
@@ -131,38 +178,41 @@ class Projectile:
         self.r = 5
         self.screen = screen
         self.damage = damage
-    
+
     def update(self):
-        self.pos += self.direction*self.speed
+        self.pos += self.direction * self.speed
         pygame.draw.circle(self.screen, "#1f74f5", (self.pos), self.r)
 
     def in_border(self) -> bool:
-        if self.pos.x < self.screen.get_width()/32+self.r:
-           return True
-        if self.pos.x > self.screen.get_width()*31/32-self.r:
+        if self.pos.x < self.screen.get_width() / 32 + self.r:
             return True
-        if self.pos.y < self.screen.get_height()/32+self.r:
+        if self.pos.x > self.screen.get_width() * 31 / 32 - self.r:
             return True
-        if self.pos.y > self.screen.get_height()*31/32-self.r:
+        if self.pos.y < self.screen.get_height() / 32 + self.r:
+            return True
+        if self.pos.y > self.screen.get_height() * 31 / 32 - self.r:
             return True
         return False
 
+
 def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
     enemies = []
-    for _ in range(room_num+difficulty):
+    for _ in range(room_num + difficulty):
         enemies.append(Enemy(screen))
 
     return enemies
 
-def change_room(screen, player, old_grid, new_grid):
+
+def change_room(screen, player, old_grid, new_grid, room_number):
     old_room = pygame.Surface((screen.get_width(), screen.get_height()))
     new_room = pygame.Surface((screen.get_width(), screen.get_height()))
-    draw_background(old_room, old_grid)
-    draw_background(new_room, new_grid)
-    
+    draw_background(old_room, old_grid, room_number)
+    draw_background(new_room, new_grid, room_number+1)
     for offset in range(0, screen.get_height(), 2):
-        screen.blits([(old_room, (0, offset)), (new_room, (0, offset-screen.get_height()))])
-        pygame.draw.circle(screen, "#1f74f5", (player.x, player.y+offset), player.r)
+        screen.blits(
+            [(old_room, (0, offset)), (new_room, (0, offset - screen.get_height()))]
+        )
+        pygame.draw.circle(screen, "#1f74f5", (player.x, player.y + offset), player.r)
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
@@ -172,42 +222,64 @@ def change_room(screen, player, old_grid, new_grid):
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-    
-        
     player.y += screen.get_height()
 
-def draw_background(screen, grid):
+
+def draw_background(screen, grid, room_number):
     screen.fill((100, 100, 100))
-    square_length = screen.get_width()/16
-    pygame.draw.rect(screen, ("#000000"), (square_length/2, square_length/2, square_length*15, square_length*9))
-    
+    square_length = screen.get_width() / 16
+    pygame.draw.rect(
+        screen,
+        ("#000000"),
+        (square_length / 2, square_length / 2, square_length * 15, square_length * 9),
+    )
+
     for y, row in enumerate(grid):
         for x, value in enumerate(row):
             if value == 0:
-                pygame.draw.rect(screen, (100, 100, 100), (x*square_length, y*square_length, square_length, square_length), 3)
+                pygame.draw.rect(
+                    screen,
+                    (100, 100, 100),
+                    (
+                        x * square_length,
+                        y * square_length,
+                        square_length,
+                        square_length,
+                    ),
+                    3,
+                )
             elif value == 1:
-                pygame.draw.rect(screen, (200, 200, 200), (x*square_length, y*square_length, square_length, square_length))
-    
+                pygame.draw.rect(
+                    screen,
+                    (200, 200, 200),
+                    (
+                        x * square_length,
+                        y * square_length,
+                        square_length,
+                        square_length,
+                    ),
+                )
+    my_font = pygame.font.SysFont('Comic Sans MS', 250)
+    text = my_font.render(str(room_number), True, (255, 255, 255))
+    textpos = text.get_rect(centerx=screen.get_width() / 2, centery=screen.get_height() / 2)
+    screen.blit(text, textpos)
+
+
 
 def main():
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
-    
-
+    room_number = 1
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
-
-
     grid[3][5] = 1
     bullets = []
     enemies: list[Enemy] = generate_enemies(screen, 5)
 
-
-
     while player.health > 0:
-        draw_background(screen, grid)
+        draw_background(screen, grid, room_number)
 
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
@@ -218,20 +290,33 @@ def main():
                     pygame.quit()
                     sys.exit()
             elif event.type == pygame.locals.MOUSEBUTTONDOWN:
-                bullets.append(Projectile(screen, (player.x, player.y), (event.pos[0]-player.x, event.pos[1]-player.y), 1))
+                bullets.append(
+                    Projectile(
+                        screen,
+                        (player.x, player.y),
+                        (event.pos[0] - player.x, event.pos[1] - player.y),
+                        1,
+                    )
+                )
 
         keys_held = pygame.key.get_pressed()
-        player.update(keys_held, len(enemies) == 0) 
+        player.update(keys_held, len(enemies) == 0)
+        pygame.font.init()
+
         if player.y < 0 and len(enemies) == 0:
-            change_room(screen, player, grid, grid)
+            change_room(screen, player, grid, grid, room_number)
+            room_number += 1
+           
             enemies = generate_enemies(screen, 5)
 
         for enemy in enemies:
             enemy.update(player.x, player.y)
-            if math.dist((player.x, player.y), (enemy.x, enemy.y)) < player.r + enemy.r and pygame.time.get_ticks()-enemy.last_attack_time > enemy.cooldown:
+            if (
+                math.dist((player.x, player.y), (enemy.x, enemy.y)) < player.r + enemy.r
+                and pygame.time.get_ticks() - enemy.last_attack_time > enemy.cooldown
+            ):
                 player.health -= enemy.damage
                 enemy.last_attack_time = pygame.time.get_ticks()
-
 
         for bullet in bullets.copy():
             bullet.update()
@@ -243,7 +328,7 @@ def main():
                     bullets.remove(bullet)
                     break
         bullets = [bullet for bullet in bullets if not bullet.in_border()]
-    
+
         pygame.display.flip()
         fps_clock.tick(fps)
 
