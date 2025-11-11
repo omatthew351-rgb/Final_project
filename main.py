@@ -74,15 +74,21 @@ class Player:
                         self.x = max(self.tile_length*7+self.r, min(self.tile_length*9-self.r, self.x))
                     
         else:
-            if self.x < self.screen.get_width()/32+self.r:
-                self.x = self.screen.get_width()/32+self.r
-            if self.x > self.screen.get_width()*31/32-self.r:
-                self.x = self.screen.get_width()*31/32-self.r
-            if self.y < self.screen.get_height()/32+self.r:
-                self.y = self.screen.get_height()/32+self.r
-            if self.y > self.screen.get_height()*31/32-self.r:
-                self.y = self.screen.get_height()*31/32-self.r
+                
+                if self.x < self.tile_length/2+self.r:
+                    self.x = self.tile_length/2+self.r
+                    self.vx = 0
+                elif self.x > self.screen.get_width()-self.tile_length/2-self.r:
+                    self.x = self.screen.get_width()-self.tile_length/2-self.r
+                    self.vx = 0
 
+                if self.y < self.tile_length/2+self.r:
+                    self.y = self.tile_length/2+self.r
+                    self.vy = 0
+                if self.y > self.screen.get_height()-self.tile_length/2-self.r:
+                    self.y = self.screen.get_height()-self.tile_length/2-self.r
+                    self.vy = 0
+                  
         self.vx *= 0.8
         self.vy *= 0.8
         
