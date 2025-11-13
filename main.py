@@ -212,13 +212,12 @@ def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
 
     return enemies
 
-
 def change_room(screen, player, old_grid, new_grid):
     old_room = pygame.Surface((screen.get_width(), screen.get_height()))
     new_room = pygame.Surface((screen.get_width(), screen.get_height()))
     draw_background(old_room, old_grid)
     draw_background(new_room, new_grid)
-
+    
     for offset in range(0, screen.get_height(), 2):
         screen.blits(
             [(old_room, (0, offset)), (new_room, (0, offset - screen.get_height()))]
@@ -233,9 +232,9 @@ def change_room(screen, player, old_grid, new_grid):
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-
+    
+        
     player.y += screen.get_height()
-
 
 def draw_background(screen, grid):
     screen.fill((100, 100, 100))
@@ -261,33 +260,26 @@ def draw_background(screen, grid):
                     3,
                 )
             elif value == 1:
-                pygame.draw.rect(
-                    screen,
-                    (200, 200, 200),
-                    (
-                        x * square_length,
-                        y * square_length,
-                        square_length,
-                        square_length,
-                    ),
-                )
-
+                pygame.draw.rect(screen, (200, 200, 200), (x*square_length, y*square_length, square_length, square_length))
+    
 
 def main():
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+    
 
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
+
 
     grid[3][5] = 1
     bullets = []
     enemies: list[Enemy] = generate_enemies(screen, 5)
 
     while player.health > 0:
-        draw_background(screen, grid)
+        draw_background(screen, grid, room_number)
 
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
@@ -298,14 +290,7 @@ def main():
                     pygame.quit()
                     sys.exit()
             elif event.type == pygame.locals.MOUSEBUTTONDOWN:
-                bullets.append(
-                    Projectile(
-                        screen,
-                        (player.x, player.y),
-                        (event.pos[0] - player.x, event.pos[1] - player.y),
-                        player.weapon.damage,
-                    )
-                )
+                bullets.append(Projectile(screen, (player.x, player.y), (event.pos[0]-player.x, event.pos[1]-player.y), 1))
 
         keys_held = pygame.key.get_pressed()
         player.update(keys_held, len(enemies) == 0)
@@ -332,7 +317,7 @@ def main():
                     bullets.remove(bullet)
                     break
         bullets = [bullet for bullet in bullets if not bullet.in_border()]
-
+    
         pygame.display.flip()
         fps_clock.tick(fps)
 
