@@ -8,6 +8,7 @@ import math
 
 WIDTH, HEIGHT = 800, 600
 
+ENEMY_TYPES = {1: [15, 3, 3, 1, 1, (255, 0, 0)], 2: [20, 10, 1.5, 1, 1, (0, 255, 0)]}
 
 class Player:
 
@@ -20,7 +21,7 @@ class Player:
         self.screen = screen
         self.r = 20
         self.tile_length = self.screen.get_height() / 10
-        self.weapon = Weapon(5, 1, 5, 5)
+        self.weapon = Weapon(3, 500, 1500, 5)
 
 
     def update(self, keys_held: set[int], door_open=False) -> None:
@@ -130,37 +131,19 @@ class Player:
         pygame.draw.circle(self.screen, "#1f74f5", (self.x, self.y), self.r)
         
 
-
 class Enemy:
-
-    def __init__(self, screen, r=20, health=3, speed=3, damage=1, cooldown=1):
+    def __init__(self, screen, r=20, health=3, speed=3, damage=1, cooldown=1, color=(255, 0, 0)):
         self.x = random.uniform(50, screen.get_width() - 50)
-        self.y = random.uniform(50, screen.get_height() / 2)
+        self.y = random.uniform(50, screen.get_height() - 50)
         self.r = r
         self.health = health
+        self.max_health = health
         self.screen = screen
         self.damage = 1 
-        self.cooldown = cooldown
-        self.speed = random.choice([1, 3])
-        self.last_attack_time = -1000
-        # if self.speed == 0:
-        #     self.color = (128, 128, 128)
-        #     self.damage = 5
-        #     self.cooldown = 1000
-        if self.speed == 1:
-            self.color = (255, 0, 0)
-            self.health = 5
-            self.damage = 1
-            self.cooldown = 1000
-        # elif self.speed == 2:
-        #     self.color = (255, 255, 0)
-        #     self.damage = 2
-        #     self.cooldown = 1500
-        elif self.speed == 3:
-            self.color = (0, 255, 0)
-            self.damage = 1
-            self.health = 3
-            self.cooldown = 1000
+        self.cooldown = cooldown*1000
+        self.speed = speed
+        self.last_attack_time = -self.cooldown
+        self.color = color
 
     def update(self, player_x, player_y) -> None:
         dist_x = player_x - self.x
@@ -184,7 +167,7 @@ class Enemy:
             (
                 health_bar_x,
                 health_bar_y,
-                health_bar_length * (self.health / 3),
+                health_bar_length * (self.health / self.max_health),
                 health_bar_height,
             ),
         )
@@ -217,17 +200,20 @@ class Projectile:
 class Weapon:
     def __init__(self, damage=3, cooldown=0, reload_time=0, max_bullet=1) -> None:
         self.damage = damage
-        self.cooldown = cooldown
+        self.cooldown = cooldown*1000
         self.reload_time = reload_time
         self.bullet_count = max_bullet
         self.max_bullet = max_bullet
+        self.last_attack_time = -self.cooldown
 
 
 def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
     enemies = []
     
     for _ in range(room_num + difficulty):
-        enemies.append(Enemy(screen))
+        enemy_stats = ENEMY_TYPES[random.choice(list(ENEMY_TYPES.keys()))]
+        enemies.append(Enemy(screen, *enemy_stats))
+
     return enemies
 
 def change_room(screen, player, old_grid, new_grid, room_number, direction):
