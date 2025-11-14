@@ -21,6 +21,7 @@ class Player:
         self.r = 20
         self.tile_length = self.screen.get_height() / 10
 
+
     def update(self, keys_held: set[int], door_open=False) -> None:
         ax, ay = 0, 0
         if keys_held[pygame.K_UP] or keys_held[pygame.K_w]:
