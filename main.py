@@ -225,9 +225,9 @@ class Weapon:
 
 def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
     enemies = []
+    
     for _ in range(room_num + difficulty):
         enemies.append(Enemy(screen))
-
     return enemies
 
 def change_room(screen, player, old_grid, new_grid, room_number, direction):
@@ -279,11 +279,26 @@ def draw_background(screen, grid, room_number):
                 )
             elif value == 1:
                 pygame.draw.rect(screen, (200, 200, 200), (x*square_length, y*square_length, square_length, square_length))
-    my_font = pygame.font.SysFont('Comic Sans MS', 250)
-    text = my_font.render(str(room_number), True, (255, 255, 255))
+    room_number_font = pygame.font.SysFont('Comic Sans MS', 250)
+    text = room_number_font.render(str(room_number), True, (255, 255, 255))
     textpos = text.get_rect(centerx=screen.get_width() / 2, centery=screen.get_height() / 2)
     screen.blit(text, textpos)
 
+    difficulty_font = pygame.font.SysFont('Comic Sans MS', 20)
+    text = difficulty_font.render(str(difficulty[0]), True, (255, 255, 255))
+    textpos = text.get_rect(centerx=screen.get_width() / 2, centery=square_length / 2)
+    screen.blit(text, textpos)
+    text = difficulty_font.render(str(difficulty[0]), True, (255, 255, 255))
+    textpos = text.get_rect(centerx=screen.get_width() / 2, centery=square_length / 2)
+    screen.blit(text, textpos)
+    text = difficulty_font.render(str(difficulty[0]), True, (255, 255, 255))
+    textpos = text.get_rect(centerx=screen.get_width() / 2, centery=square_length / 2)
+    screen.blit(text, textpos)
+    text = difficulty_font.render(str(difficulty[0]), True, (255, 255, 255))
+    textpos = text.get_rect(centerx=screen.get_width() / 2, centery=square_length / 2)
+    screen.blit(text, textpos)
+
+difficulty = [1, 2, 3, 4]
 def main():
     fps = 60
     fps_clock = pygame.time.Clock()
@@ -295,7 +310,7 @@ def main():
     grid[3][5] = 1
     bullets = []
     enemies: list[Enemy] = []#generate_enemies(screen, 5)
-
+    
     while player.health > 0:
         draw_background(screen, grid, room_number)
 
@@ -317,22 +332,26 @@ def main():
                 direction = (0, 1)
                 change_room(screen, player, grid, grid, room_number, direction)
                 room_number += 1
-                enemies = generate_enemies(screen, room_number)
+                enemies = generate_enemies(screen, room_number, difficulty[0])
+                random.shuffle(difficulty)
             elif player.y-player.r > screen.get_height():
                 direction = (0, -1)
                 change_room(screen, player, grid, grid, room_number, direction)
                 room_number += 1
-                enemies = generate_enemies(screen, room_number)
+                enemies = generate_enemies(screen, room_number, difficulty[1])
+                random.shuffle(difficulty)
             if player.x+player.r < 0:
                 direction = (1, 0)
                 change_room(screen, player, grid, grid, room_number, direction)
                 room_number += 1
-                enemies = generate_enemies(screen, room_number)
+                enemies = generate_enemies(screen, room_number, difficulty[2])
+                random.shuffle(difficulty)
             elif player.x-player.r > screen.get_width():
                 direction = (-1, 0)
                 change_room(screen, player, grid, grid, room_number, direction)
                 room_number += 1
-                enemies = generate_enemies(screen, room_number)
+                enemies = generate_enemies(screen, room_number, difficulty[3])
+                random.shuffle(difficulty)
 
         for enemy in enemies:
             enemy.update(player.x, player.y)
