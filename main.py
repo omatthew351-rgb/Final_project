@@ -21,7 +21,7 @@ class Player:
         self.screen = screen
         self.r = 20
         self.tile_length = self.screen.get_height() / 10
-        self.weapon = Weapon(3, 500, 1500, 5)
+        self.weapon = Weapon(3, 1000, 5000, 5)
 
 
     def update(self, keys_held: set[int], door_open=False) -> None:
@@ -200,7 +200,7 @@ class Projectile:
 class Weapon:
     def __init__(self, damage=3, cooldown=0, reload_time=0, max_bullet=1) -> None:
         self.damage = damage
-        self.cooldown = cooldown*1000
+        self.cooldown = cooldown
         self.reload_time = reload_time
         self.bullet_count = max_bullet
         self.max_bullet = max_bullet
@@ -292,9 +292,11 @@ def main():
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-            elif event.type == pygame.locals.MOUSEBUTTONDOWN:
-                bullets.append(Projectile(screen, (player.x, player.y), (event.pos[0]-player.x, event.pos[1]-player.y), player.weapon.damage))
-
+        if pygame.mouse.get_pressed()[0]:
+            if pygame.time.get_ticks() - player.weapon.last_attack_time > player.weapon.cooldown:
+                pos = pygame.mouse.get_pos()
+                bullets.append(Projectile(screen, (player.x, player.y), (pos[0]-player.x, pos[1]-player.y), player.weapon.damage))
+                player.weapon.last_attack_time = pygame.time.get_ticks()
         keys_held = pygame.key.get_pressed()
         player.update(keys_held, len(enemies) == 0)
         if len(enemies) == 0:
