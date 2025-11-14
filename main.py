@@ -20,6 +20,7 @@ class Player:
         self.screen = screen
         self.r = 20
         self.tile_length = self.screen.get_height() / 10
+        self.weapon = Weapon(3, 1, 5, 5)
 
 
     def update(self, keys_held: set[int], door_open=False) -> None:
@@ -196,6 +197,15 @@ class Projectile:
         return False
 
 
+class Weapon:
+    def __init__(self, damage=3, cooldown=0, reload_time=0, max_bullet=1) -> None:
+        self.damage = damage
+        self.cooldown = cooldown
+        self.reload_time = reload_time
+        self.bullet_count = max_bullet
+        self.max_bullet = max_bullet
+
+
 def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
     enemies = []
     for _ in range(room_num + difficulty):
@@ -203,12 +213,12 @@ def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
 
     return enemies
 
-
 def change_room(screen, player, old_grid, new_grid, room_number):
     old_room = pygame.Surface((screen.get_width(), screen.get_height()))
     new_room = pygame.Surface((screen.get_width(), screen.get_height()))
     draw_background(old_room, old_grid, room_number)
     draw_background(new_room, new_grid, room_number+1)
+    
     for offset in range(0, screen.get_height(), 2):
         screen.blits(
             [(old_room, (0, offset)), (new_room, (0, offset - screen.get_height()))]
@@ -223,8 +233,9 @@ def change_room(screen, player, old_grid, new_grid, room_number):
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
+    
+        
     player.y += screen.get_height()
-
 
 def draw_background(screen, grid, room_number):
     screen.fill((100, 100, 100))
@@ -250,22 +261,11 @@ def draw_background(screen, grid, room_number):
                     3,
                 )
             elif value == 1:
-                pygame.draw.rect(
-                    screen,
-                    (200, 200, 200),
-                    (
-                        x * square_length,
-                        y * square_length,
-                        square_length,
-                        square_length,
-                    ),
-                )
+                pygame.draw.rect(screen, (200, 200, 200), (x*square_length, y*square_length, square_length, square_length))
     my_font = pygame.font.SysFont('Comic Sans MS', 250)
     text = my_font.render(str(room_number), True, (255, 255, 255))
     textpos = text.get_rect(centerx=screen.get_width() / 2, centery=screen.get_height() / 2)
     screen.blit(text, textpos)
-
-
 
 def main():
     fps = 60
@@ -291,23 +291,14 @@ def main():
                     pygame.quit()
                     sys.exit()
             elif event.type == pygame.locals.MOUSEBUTTONDOWN:
-                bullets.append(
-                    Projectile(
-                        screen,
-                        (player.x, player.y),
-                        (event.pos[0] - player.x, event.pos[1] - player.y),
-                        1,
-                    )
-                )
+                bullets.append(Projectile(screen, (player.x, player.y), (event.pos[0]-player.x, event.pos[1]-player.y), 1))
 
         keys_held = pygame.key.get_pressed()
         player.update(keys_held, len(enemies) == 0)
-        pygame.font.init()
-
-        if player.y < 0 and len(enemies) == 0:
+        if player.y+player.r < 0 and len(enemies) == 0:
             change_room(screen, player, grid, grid, room_number)
             room_number += 1
-           
+
             enemies = generate_enemies(screen, 5)
 
         for enemy in enemies:
@@ -329,7 +320,7 @@ def main():
                     bullets.remove(bullet)
                     break
         bullets = [bullet for bullet in bullets if not bullet.in_border()]
-
+    
         pygame.display.flip()
         fps_clock.tick(fps)
 
