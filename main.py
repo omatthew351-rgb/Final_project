@@ -16,7 +16,7 @@ class Player:
         self.y = screen.get_height() / 2 + 200
         self.vx = 0
         self.vy = 0
-        self.health = 20
+        self.health = 6
         self.screen = screen
         self.r = 20
         self.tile_length = self.screen.get_height() / 10
@@ -128,32 +128,38 @@ class Player:
         self.vy *= 0.8
 
         pygame.draw.circle(self.screen, "#1f74f5", (self.x, self.y), self.r)
+        
 
 
 class Enemy:
 
-    def __init__(self, screen, r=15, health=3, speed=None, damage=None, cooldown=None):
+    def __init__(self, screen, r=20, health=3, speed=3, damage=1, cooldown=1):
         self.x = random.uniform(50, screen.get_width() - 50)
         self.y = random.uniform(50, screen.get_height() / 2)
         self.r = r
         self.health = health
         self.screen = screen
-        self.damage = 1 if damage is None else damage
-        self.cooldown = 1000 if cooldown is None else cooldown
-        self.speed = random.choice([1, 2, 3]) if speed is None else speed
+        self.damage = 1 
+        self.cooldown = cooldown
+        self.speed = random.choice([1, 3])
         self.last_attack_time = -1000
-        #traffic light speed 😎
+        # if self.speed == 0:
+        #     self.color = (128, 128, 128)
+        #     self.damage = 5
+        #     self.cooldown = 1000
         if self.speed == 1:
             self.color = (255, 0, 0)
-            self.damage = 3
-            self.cooldown = 2000
-        elif self.speed == 2:
-            self.color = (255, 255, 0)
-            self.damage = 2
-            self.cooldown = 1500
-        else:
+            self.health = 5
+            self.damage = 1
+            self.cooldown = 1000
+        # elif self.speed == 2:
+        #     self.color = (255, 255, 0)
+        #     self.damage = 2
+        #     self.cooldown = 1500
+        elif self.speed == 3:
             self.color = (0, 255, 0)
             self.damage = 1
+            self.health = 3
             self.cooldown = 1000
 
     def update(self, player_x, player_y) -> None:
