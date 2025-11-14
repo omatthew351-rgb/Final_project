@@ -16,11 +16,11 @@ class Player:
         self.y = screen.get_height() / 2 + 200
         self.vx = 0
         self.vy = 0
-        self.health = 100
+        self.health = 20
         self.screen = screen
         self.r = 20
         self.tile_length = self.screen.get_height() / 10
-        self.weapon = Weapon(3, 1, 5, 5)
+        self.weapon = Weapon(5, 1, 5, 5)
 
 
     def update(self, keys_held: set[int], door_open=False) -> None:
@@ -132,16 +132,29 @@ class Player:
 
 class Enemy:
 
-    def __init__(self, screen, r=15, health=3, speed=3, damage=1, cooldown=1000):
+    def __init__(self, screen, r=15, health=3, speed=None, damage=None, cooldown=None):
         self.x = random.uniform(50, screen.get_width() - 50)
         self.y = random.uniform(50, screen.get_height() / 2)
         self.r = r
         self.health = health
         self.screen = screen
-        self.speed = speed
-        self.damage = damage
-        self.cooldown = cooldown
+        self.damage = 1 if damage is None else damage
+        self.cooldown = 1000 if cooldown is None else cooldown
+        self.speed = random.choice([1, 2, 3]) if speed is None else speed
         self.last_attack_time = -1000
+        #traffic light speed 😎
+        if self.speed == 1:
+            self.color = (255, 0, 0)
+            self.damage = 3
+            self.cooldown = 2000
+        elif self.speed == 2:
+            self.color = (255, 255, 0)
+            self.damage = 2
+            self.cooldown = 1500
+        else:
+            self.color = (0, 255, 0)
+            self.damage = 1
+            self.cooldown = 1000
 
     def update(self, player_x, player_y) -> None:
         dist_x = player_x - self.x
@@ -149,8 +162,7 @@ class Enemy:
         length = math.sqrt(dist_x**2 + dist_y**2)
         self.x += dist_x / length * self.speed
         self.y += dist_y / length * self.speed
-        pygame.draw.circle(self.screen, "#7b0a0a", (self.x, self.y), self.r)
-        # Draw health bar
+        pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.r)
         health_bar_length = 30
         health_bar_height = 5
         health_bar_x = self.x - health_bar_length / 2
@@ -170,7 +182,6 @@ class Enemy:
                 health_bar_height,
             ),
         )
-
 
 class Projectile:
     def __init__(self, screen, start_pos, direction, damage) -> None:
@@ -277,7 +288,7 @@ def main():
     grid = [[0 for _ in range(16)] for _ in range(10)]
     grid[3][5] = 1
     bullets = []
-    enemies: list[Enemy] = generate_enemies(screen, 5)
+    enemies: list[Enemy] = generate_enemies(screen, 99)
 
     while player.health > 0:
         draw_background(screen, grid, room_number)
