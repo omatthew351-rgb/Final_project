@@ -212,11 +212,11 @@ def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
 
     return enemies
 
-def change_room(screen, player, old_grid, new_grid):
+def change_room(screen, player, old_grid, new_grid, room_number):
     old_room = pygame.Surface((screen.get_width(), screen.get_height()))
     new_room = pygame.Surface((screen.get_width(), screen.get_height()))
-    draw_background(old_room, old_grid)
-    draw_background(new_room, new_grid)
+    draw_background(old_room, old_grid, room_number)
+    draw_background(new_room, new_grid, room_number+1)
     
     for offset in range(0, screen.get_height(), 2):
         screen.blits(
@@ -236,7 +236,7 @@ def change_room(screen, player, old_grid, new_grid):
         
     player.y += screen.get_height()
 
-def draw_background(screen, grid):
+def draw_background(screen, grid, room_number):
     screen.fill((100, 100, 100))
     square_length = screen.get_width() / 16
     pygame.draw.rect(
@@ -261,19 +261,19 @@ def draw_background(screen, grid):
                 )
             elif value == 1:
                 pygame.draw.rect(screen, (200, 200, 200), (x*square_length, y*square_length, square_length, square_length))
-    
+    my_font = pygame.font.SysFont('Comic Sans MS', 250)
+    text = my_font.render(str(room_number), True, (255, 255, 255))
+    textpos = text.get_rect(centerx=screen.get_width() / 2, centery=screen.get_height() / 2)
+    screen.blit(text, textpos)
 
 def main():
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
-    
-
+    room_number = 1
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
-
-
     grid[3][5] = 1
     bullets = []
     enemies: list[Enemy] = generate_enemies(screen, 5)
@@ -295,7 +295,9 @@ def main():
         keys_held = pygame.key.get_pressed()
         player.update(keys_held, len(enemies) == 0)
         if player.y+player.r < 0 and len(enemies) == 0:
-            change_room(screen, player, grid, grid)
+            change_room(screen, player, grid, grid, room_number)
+            room_number += 1
+
             enemies = generate_enemies(screen, 5)
 
         for enemy in enemies:
