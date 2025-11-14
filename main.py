@@ -224,17 +224,17 @@ def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
 
     return enemies
 
-def change_room(screen, player, old_grid, new_grid, room_number):
+def change_room(screen, player, old_grid, new_grid, room_number, direction):
     old_room = pygame.Surface((screen.get_width(), screen.get_height()))
     new_room = pygame.Surface((screen.get_width(), screen.get_height()))
     draw_background(old_room, old_grid, room_number)
     draw_background(new_room, new_grid, room_number+1)
     
-    for offset in range(0, screen.get_height(), 2):
+    for offset in range(0, max(screen.get_height()*abs(direction[1]), screen.get_width()*abs(direction[0])), 2):
         screen.blits(
-            [(old_room, (0, offset)), (new_room, (0, offset - screen.get_height()))]
+            [(old_room, (direction[0]*offset, direction[1]*offset)), (new_room, (direction[0]*(offset-screen.get_width()), direction[1]*(offset - screen.get_height())))]
         )
-        pygame.draw.circle(screen, "#1f74f5", (player.x, player.y + offset), player.r)
+        pygame.draw.circle(screen, "#1f74f5", (player.x + offset*direction[0], player.y + offset*direction[1]), player.r)
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
@@ -245,8 +245,8 @@ def change_room(screen, player, old_grid, new_grid, room_number):
                     pygame.quit()
                     sys.exit()
     
-        
-    player.y += screen.get_height()
+    player.x += screen.get_width()*direction[0]
+    player.y += screen.get_height()*direction[1]
 
 def draw_background(screen, grid, room_number):
     screen.fill((100, 100, 100))
@@ -288,7 +288,7 @@ def main():
     grid = [[0 for _ in range(16)] for _ in range(10)]
     grid[3][5] = 1
     bullets = []
-    enemies: list[Enemy] = generate_enemies(screen, 99)
+    enemies: list[Enemy] = []#generate_enemies(screen, 5)
 
     while player.health > 0:
         draw_background(screen, grid, room_number)
@@ -302,15 +302,31 @@ def main():
                     pygame.quit()
                     sys.exit()
             elif event.type == pygame.locals.MOUSEBUTTONDOWN:
-                bullets.append(Projectile(screen, (player.x, player.y), (event.pos[0]-player.x, event.pos[1]-player.y), 1))
+                bullets.append(Projectile(screen, (player.x, player.y), (event.pos[0]-player.x, event.pos[1]-player.y), player.weapon.damage))
 
         keys_held = pygame.key.get_pressed()
         player.update(keys_held, len(enemies) == 0)
-        if player.y+player.r < 0 and len(enemies) == 0:
-            change_room(screen, player, grid, grid, room_number)
-            room_number += 1
-
-            enemies = generate_enemies(screen, 5)
+        if len(enemies) == 0:
+            if player.y+player.r < 0:
+                direction = (0, 1)
+                change_room(screen, player, grid, grid, room_number, direction)
+                room_number += 1
+                enemies = generate_enemies(screen, room_number)
+            elif player.y-player.r > screen.get_height():
+                direction = (0, -1)
+                change_room(screen, player, grid, grid, room_number, direction)
+                room_number += 1
+                enemies = generate_enemies(screen, room_number)
+            if player.x+player.r < 0:
+                direction = (1, 0)
+                change_room(screen, player, grid, grid, room_number, direction)
+                room_number += 1
+                enemies = generate_enemies(screen, room_number)
+            elif player.x-player.r > screen.get_width():
+                direction = (-1, 0)
+                change_room(screen, player, grid, grid, room_number, direction)
+                room_number += 1
+                enemies = generate_enemies(screen, room_number)
 
         for enemy in enemies:
             enemy.update(player.x, player.y)
