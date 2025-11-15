@@ -222,7 +222,7 @@ def change_room(screen, player, old_grid, new_grid, room_number, direction):
     new_room = pygame.Surface((screen.get_width(), screen.get_height()))
     draw_background(old_room, old_grid, room_number)
     draw_background(new_room, new_grid, room_number+1)
-    
+    player.weapon.bullet_count = player.weapon.max_bullet
     for offset in range(0, max(screen.get_height()*abs(direction[1]), screen.get_width()*abs(direction[0])), 2):
         screen.blits(
             [(old_room, (direction[0]*offset, direction[1]*offset)), (new_room, (direction[0]*(offset-screen.get_width()), direction[1]*(offset - screen.get_height())))]
@@ -358,12 +358,26 @@ def main():
 
         for enemy in enemies:
             enemy.update(player.x, player.y)
-            if (
-                math.dist((player.x, player.y), (enemy.x, enemy.y)) < player.r + enemy.r
-                and pygame.time.get_ticks() - enemy.last_attack_time > enemy.cooldown
-            ):
-                player.health -= enemy.damage
-                enemy.last_attack_time = pygame.time.get_ticks()
+            if math.dist((player.x, player.y), (enemy.x, enemy.y)) < player.r + enemy.r:
+                if pygame.time.get_ticks() - enemy.last_attack_time > enemy.cooldown:
+                    player.health -= enemy.damage
+                    enemy.last_attack_time = pygame.time.get_ticks()
+                overlap = -math.dist((player.x, player.y), (enemy.x, enemy.y)) + player.r + enemy.r
+                to_player_vector = pygame.Vector2(player.x-enemy.x, player.y-enemy.y).normalize()
+                enemy.x -= to_player_vector.x*overlap/2
+                enemy.y -= to_player_vector.y*overlap/2
+                player.x += to_player_vector.x*overlap/2
+                player.y += to_player_vector.y*overlap/2
+            for other in enemies:
+                if enemy is other:
+                    continue
+                if math.dist((other.x, other.y), (enemy.x, enemy.y)) < other.r + enemy.r:
+                    overlap = -math.dist((other.x,other.y), (enemy.x, enemy.y)) + other.r + enemy.r
+                    to_other_vector = pygame.Vector2(other.x-enemy.x,other.y-enemy.y).normalize()
+                    enemy.x -= to_other_vector.x*overlap/2
+                    enemy.y -= to_other_vector.y*overlap/2
+                    other.x += to_other_vector.x*overlap/2
+                    other.y += to_other_vector.y*overlap/2
 
         for bullet in bullets.copy():
             bullet.update()
