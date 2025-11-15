@@ -6,7 +6,7 @@ import random
 import math
 
 
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 800, 500
 
 ENEMY_TYPES = {1: [15, 3, 3, 1, 1, (255, 0, 0)], 2: [20, 10, 1.5, 1, 1, (0, 255, 0)]} 
 
@@ -14,7 +14,7 @@ class Player:
 
     def __init__(self, screen: pygame.Surface):
         self.x = screen.get_width() / 2
-        self.y = screen.get_height() / 2 + 200
+        self.y = screen.get_height() / 2
         self.vx = 0
         self.vy = 0
         self.health = 6
@@ -204,7 +204,8 @@ class Weapon:
         self.reload_time = reload_time
         self.bullet_count = max_bullet
         self.max_bullet = max_bullet
-        self.last_attack_time = -self.cooldown
+        self.last_attack_time = -cooldown
+        self.reloading = False
 
 
 def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
@@ -285,11 +286,13 @@ def draw_background(screen, grid, room_number):
     screen.blit(text, textpos)
 
 difficulty = [1, 2, 3, 4]
+Player_reload = pygame.USEREVENT + 0
+
 def main():
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
     room_number = 1
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
@@ -304,15 +307,27 @@ def main():
             if event.type == pygame.locals.QUIT:
                 pygame.quit()
                 sys.exit()
+            elif event.type == Player_reload:
+                player.weapon.bullet_count = player.weapon.max_bullet
+                player.weapon.reloading = False
+                pygame.time.set_timer(Player_reload, 0)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
+                elif event.key == pygame.K_r:
+                    player.weapon.reloading = True
+                    pygame.time.set_timer(Player_reload, player.weapon.reload_time)
         if pygame.mouse.get_pressed()[0]:
             if pygame.time.get_ticks() - player.weapon.last_attack_time > player.weapon.cooldown:
-                pos = pygame.mouse.get_pos()
-                bullets.append(Projectile(screen, (player.x, player.y), (pos[0]-player.x, pos[1]-player.y), player.weapon.damage))
-                player.weapon.last_attack_time = pygame.time.get_ticks()
+                if player.weapon.bullet_count > 0 and not player.weapon.reloading:
+                    pos = pygame.mouse.get_pos()
+                    bullets.append(Projectile(screen, (player.x, player.y), (pos[0]-player.x, pos[1]-player.y), player.weapon.damage))
+                    player.weapon.last_attack_time = pygame.time.get_ticks()
+                    player.weapon.bullet_count -= 1
+                elif not player.weapon.reloading:
+                    player.weapon.reloading = True
+                    pygame.time.set_timer(Player_reload, player.weapon.reload_time)
         keys_held = pygame.key.get_pressed()
         player.update(keys_held, len(enemies) == 0)
         if len(enemies) == 0:
