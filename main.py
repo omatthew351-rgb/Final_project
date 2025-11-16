@@ -7,8 +7,13 @@ import math
 
 
 WIDTH, HEIGHT = 800, 500
+#  r=20, health=3, speed=3, damage=1, cooldown=1000, color=(255, 0, 0), special_tags=None
+ENEMY_TYPES = {
+    1: [15, 3, 3, 1, 1000, (255, 0, 0)],
+    2: [20, 10, 1.5, 1, 1000, (0, 255, 0)],
+    3: [15, 5, 1, 1, 3000, (0, 0, 255), ["ranged"]],
+}
 
-ENEMY_TYPES = {1: [15, 3, 3, 1, 1, (255, 0, 0)], 2: [20, 10, 1.5, 1, 1, (0, 255, 0)]} 
 
 class Player:
     def __init__(self, screen: pygame.Surface):
@@ -23,7 +28,6 @@ class Player:
         self.weapon = Weapon(3, 1000, 5000, 5)
         self.trap_cd = 1000
         self.last_trap = -10000
-
 
     def update(self, keys_held: set[int], door_open=False) -> None:
         ax, ay = 0, 0
@@ -130,48 +134,7 @@ class Player:
         self.vy *= 0.8
 
         pygame.draw.circle(self.screen, "#1f74f5", (self.x, self.y), self.r)
-        
 
-class Enemy:
-    def __init__(self, screen, r=20, health=3, speed=3, damage=1, cooldown=1, color=(255, 0, 0)):
-        self.x = random.uniform(50, screen.get_width() - 50)
-        self.y = random.uniform(50, screen.get_height() - 50)
-        self.r = r
-        self.health = health
-        self.max_health = health
-        self.screen = screen
-        self.damage = 1 
-        self.cooldown = cooldown*1000
-        self.speed = speed
-        self.last_attack_time = -self.cooldown
-        self.color = color
-
-    def update(self, player_x, player_y) -> None:
-        dist_x = player_x - self.x
-        dist_y = player_y - self.y
-        length = math.sqrt(dist_x**2 + dist_y**2)
-        self.x += dist_x / length * self.speed
-        self.y += dist_y / length * self.speed
-        pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.r)
-        health_bar_length = 30
-        health_bar_height = 5
-        health_bar_x = self.x - health_bar_length / 2
-        health_bar_y = self.y - self.r - 10
-        pygame.draw.rect(
-            self.screen,
-            "#ff0000",
-            (health_bar_x, health_bar_y, health_bar_length, health_bar_height),
-        )
-        pygame.draw.rect(
-            self.screen,
-            "#00ff00",
-            (
-                health_bar_x,
-                health_bar_y,
-                health_bar_length * (self.health / self.max_health),
-                health_bar_height,
-            ),
-        )
 
 class Projectile:
     def __init__(self, screen, start_pos, direction, damage) -> None:
@@ -198,37 +161,125 @@ class Projectile:
         return False
 
 
+class Enemy:
+    def __init__(
+        self,
+        screen,
+        r=20,
+        health=3,
+        speed=3,
+        damage=1,
+        cooldown=1000,
+        color=(255, 0, 0),
+        special_tags=None,
+    ):
+        self.x = random.uniform(50, screen.get_width() - 50)
+        self.y = random.uniform(50, screen.get_height() - 50)
+        self.r = r
+        self.health = health
+        self.max_health = health
+        self.screen = screen
+        self.damage = damage
+        self.cooldown = cooldown
+        self.speed = speed
+        self.last_attack_time = 0
+        self.color = color
+        self.special_tags = [] if special_tags is None else special_tags
+
+    def update(self, player_x, player_y) -> None:
+        global enemy_bullets
+        dist_x = player_x - self.x
+        dist_y = player_y - self.y
+        length = math.sqrt(dist_x**2 + dist_y**2)
+        self.x += dist_x / length * self.speed
+        self.y += dist_y / length * self.speed
+        pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.r)
+        health_bar_length = 30
+        health_bar_height = 5
+        health_bar_x = self.x - health_bar_length / 2
+        health_bar_y = self.y - self.r - 10
+        pygame.draw.rect(
+            self.screen,
+            "#ff0000",
+            (health_bar_x, health_bar_y, health_bar_length, health_bar_height),
+        )
+        pygame.draw.rect(
+            self.screen,
+            "#00ff00",
+            (
+                health_bar_x,
+                health_bar_y,
+                health_bar_length * (self.health / self.max_health),
+                health_bar_height,
+            ),
+        )
+        if "ranged" in self.special_tags:
+
+            if pygame.time.get_ticks() - self.last_attack_time > self.cooldown:
+                self.last_attack_time = pygame.time.get_ticks()
+                enemy_bullets.append(
+                    Projectile(
+                        self.screen,
+                        (self.x, self.y),
+                        (player_x - self.x, player_y - self.y),
+                        self.damage,
+                    )
+                )
+
+
 class Weapon:
-    def __init__(self, damage=3, cooldown=0, reload_time=0, max_bullet=1) -> None:
+    def __init__(self, damage=3, cooldown=1000, reload_time=0, max_bullet=1) -> None:
         self.damage = damage
         self.cooldown = cooldown
         self.reload_time = reload_time
         self.bullet_count = max_bullet
         self.max_bullet = max_bullet
-        self.last_attack_time = -cooldown
+        self.last_attack_time = -self.cooldown
         self.reloading = False
 
 
 def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
     enemies = []
-    
+
     for _ in range(room_num + difficulty):
         enemy_stats = ENEMY_TYPES[random.choice(list(ENEMY_TYPES.keys()))]
         enemies.append(Enemy(screen, *enemy_stats))
 
     return enemies
 
+
 def change_room(screen, player, old_grid, new_grid, room_number, direction):
     old_room = pygame.Surface((screen.get_width(), screen.get_height()))
     new_room = pygame.Surface((screen.get_width(), screen.get_height()))
     draw_background(old_room, old_grid, room_number)
-    draw_background(new_room, new_grid, room_number+1)
-    
-    for offset in range(0, max(screen.get_height()*abs(direction[1]), screen.get_width()*abs(direction[0])), 2):
+    draw_background(new_room, new_grid, room_number + 1)
+    player.weapon.bullet_count = player.weapon.max_bullet
+    for offset in range(
+        0,
+        max(
+            screen.get_height() * abs(direction[1]),
+            screen.get_width() * abs(direction[0]),
+        ),
+        2,
+    ):
         screen.blits(
-            [(old_room, (direction[0]*offset, direction[1]*offset)), (new_room, (direction[0]*(offset-screen.get_width()), direction[1]*(offset - screen.get_height())))]
+            [
+                (old_room, (direction[0] * offset, direction[1] * offset)),
+                (
+                    new_room,
+                    (
+                        direction[0] * (offset - screen.get_width()),
+                        direction[1] * (offset - screen.get_height()),
+                    ),
+                ),
+            ]
         )
-        pygame.draw.circle(screen, "#1f74f5", (player.x + offset*direction[0], player.y + offset*direction[1]), player.r)
+        pygame.draw.circle(
+            screen,
+            "#1f74f5",
+            (player.x + offset * direction[0], player.y + offset * direction[1]),
+            player.r,
+        )
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
@@ -238,9 +289,10 @@ def change_room(screen, player, old_grid, new_grid, room_number, direction):
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-    
-    player.x += screen.get_width()*direction[0]
-    player.y += screen.get_height()*direction[1]
+
+    player.x += screen.get_width() * direction[0]
+    player.y += screen.get_height() * direction[1]
+
 
 def draw_background(screen, grid, room_number):
     screen.fill((100, 100, 100))
@@ -266,43 +318,61 @@ def draw_background(screen, grid, room_number):
                     3,
                 )
             elif value == 1:
-                pygame.draw.rect(screen, (200, 0, 0), (x*square_length, y*square_length, square_length, square_length))
+                pygame.draw.rect(
+                    screen,
+                    (200, 0, 0), (x*square_length, y*square_length, square_length, square_length))
             elif value == 2:
-                pygame.draw.rect(screen, (255, 0, 0), (x*square_length, y*square_length, square_length, square_length))
-    room_number_font = pygame.font.SysFont('Comic Sans MS', 250)
+                pygame.draw.rect(screen, (255, 0, 0),
+                    (
+                        x * square_length,
+                        y * square_length,
+                        square_length,
+                        square_length,
+                    ),
+                )
+    room_number_font = pygame.font.SysFont("Comic Sans MS", 250)
     text = room_number_font.render(str(room_number), True, (255, 255, 255))
-    textpos = text.get_rect(centerx=screen.get_width() / 2, centery=screen.get_height() / 2)
+    textpos = text.get_rect(
+        centerx=screen.get_width() / 2, centery=screen.get_height() / 2
+    )
     screen.blit(text, textpos)
 
-    difficulty_font = pygame.font.SysFont('Comic Sans MS', 20)
+    difficulty_font = pygame.font.SysFont("Comic Sans MS", 20)
     text = difficulty_font.render(str(difficulty[0]), True, (255, 255, 255))
     textpos = text.get_rect(centerx=screen.get_width() / 2, centery=square_length / 2)
     screen.blit(text, textpos)
     text = difficulty_font.render(str(difficulty[3]), True, (255, 255, 255))
-    textpos = text.get_rect(centerx=screen.get_width() - square_length / 2, centery=screen.get_height() / 2)
+    textpos = text.get_rect(
+        centerx=screen.get_width() - square_length / 2, centery=screen.get_height() / 2
+    )
     screen.blit(text, textpos)
     text = difficulty_font.render(str(difficulty[1]), True, (255, 255, 255))
-    textpos = text.get_rect(centerx=screen.get_width() / 2, centery=screen.get_height() - square_length / 2)
+    textpos = text.get_rect(
+        centerx=screen.get_width() / 2, centery=screen.get_height() - square_length / 2
+    )
     screen.blit(text, textpos)
     text = difficulty_font.render(str(difficulty[2]), True, (255, 255, 255))
     textpos = text.get_rect(centerx=square_length / 2, centery=screen.get_height() / 2)
     screen.blit(text, textpos)
 
+
 difficulty = [1, 2, 3, 4]
 Player_reload = pygame.USEREVENT + 0
+enemy_bullets = []
+
 
 def main():
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    room_number = 1
+    room_number = 0
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
     grid[3][5] = 1
     bullets = []
-    enemies: list[Enemy] = []#generate_enemies(screen, 5)
-    
+    enemies: list[Enemy] = []  # generate_enemies(screen, 5)
+
     while player.health > 0:
         draw_background(screen, grid, room_number)
 
@@ -322,15 +392,26 @@ def main():
                     player.weapon.reloading = True
                     pygame.time.set_timer(Player_reload, player.weapon.reload_time)
         if pygame.mouse.get_pressed()[0]:
-            if pygame.time.get_ticks() - player.weapon.last_attack_time > player.weapon.cooldown:
+            if (
+                pygame.time.get_ticks() - player.weapon.last_attack_time
+                > player.weapon.cooldown
+            ):
                 if player.weapon.bullet_count > 0 and not player.weapon.reloading:
                     pos = pygame.mouse.get_pos()
-                    bullets.append(Projectile(screen, (player.x, player.y), (pos[0]-player.x, pos[1]-player.y), player.weapon.damage))
+                    bullets.append(
+                        Projectile(
+                            screen,
+                            (player.x, player.y),
+                            (pos[0] - player.x, pos[1] - player.y),
+                            player.weapon.damage,
+                        )
+                    )
                     player.weapon.last_attack_time = pygame.time.get_ticks()
                     player.weapon.bullet_count -= 1
                 elif not player.weapon.reloading:
                     player.weapon.reloading = True
                     pygame.time.set_timer(Player_reload, player.weapon.reload_time)
+
         keys_held = pygame.key.get_pressed()
         player.update(keys_held, len(enemies) == 0)
         col = int(player.x // (screen.get_width() / 16))
@@ -341,7 +422,7 @@ def main():
                 player.health -= 9999
                 player.last_trap = ticks
         if len(enemies) == 0:
-            if player.y+player.r < 0:
+            if player.y + player.r < 0:
                 direction = (0, 1)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
                 new_grid[3][5] = 1
@@ -353,7 +434,7 @@ def main():
                 room_number += 1
                 enemies = generate_enemies(screen, room_number, difficulty[0])
                 random.shuffle(difficulty)
-            elif player.y-player.r > screen.get_height():
+            elif player.y - player.r > screen.get_height():
                 direction = (0, -1)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
                 new_grid[3][5] = 1
@@ -365,7 +446,7 @@ def main():
                 room_number += 1
                 enemies = generate_enemies(screen, room_number, difficulty[1])
                 random.shuffle(difficulty)
-            if player.x+player.r < 0:
+            if player.x + player.r < 0:
                 direction = (1, 0)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
                 new_grid[3][5] = 1
@@ -377,7 +458,7 @@ def main():
                 room_number += 1
                 enemies = generate_enemies(screen, room_number, difficulty[2])
                 random.shuffle(difficulty)
-            elif player.x-player.r > screen.get_width():
+            elif player.x - player.r > screen.get_width():
                 direction = (-1, 0)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
                 new_grid[3][5] = 1
@@ -392,12 +473,41 @@ def main():
 
         for enemy in enemies:
             enemy.update(player.x, player.y)
-            if (
-                math.dist((player.x, player.y), (enemy.x, enemy.y)) < player.r + enemy.r
-                and pygame.time.get_ticks() - enemy.last_attack_time > enemy.cooldown
-            ):
-                player.health -= enemy.damage
-                enemy.last_attack_time = pygame.time.get_ticks()
+            if math.dist((player.x, player.y), (enemy.x, enemy.y)) < player.r + enemy.r:
+                if pygame.time.get_ticks() - enemy.last_attack_time > enemy.cooldown:
+                    player.health -= enemy.damage
+                    enemy.last_attack_time = pygame.time.get_ticks()
+                overlap = (
+                    -math.dist((player.x, player.y), (enemy.x, enemy.y))
+                    + player.r
+                    + enemy.r
+                )
+                to_player_vector = pygame.Vector2(
+                    player.x - enemy.x, player.y - enemy.y
+                ).normalize()
+                enemy.x -= to_player_vector.x * overlap / 2
+                enemy.y -= to_player_vector.y * overlap / 2
+                player.x += to_player_vector.x * overlap / 2
+                player.y += to_player_vector.y * overlap / 2
+            for other in enemies:
+                if enemy is other:
+                    continue
+                if (
+                    math.dist((other.x, other.y), (enemy.x, enemy.y))
+                    < other.r + enemy.r
+                ):
+                    overlap = (
+                        -math.dist((other.x, other.y), (enemy.x, enemy.y))
+                        + other.r
+                        + enemy.r
+                    )
+                    to_other_vector = pygame.Vector2(
+                        other.x - enemy.x, other.y - enemy.y
+                    ).normalize()
+                    enemy.x -= to_other_vector.x * overlap / 2
+                    enemy.y -= to_other_vector.y * overlap / 2
+                    other.x += to_other_vector.x * overlap / 2
+                    other.y += to_other_vector.y * overlap / 2
 
         for bullet in bullets.copy():
             bullet.update()
@@ -409,7 +519,13 @@ def main():
                     bullets.remove(bullet)
                     break
         bullets = [bullet for bullet in bullets if not bullet.in_border()]
-    
+
+        for bullet in enemy_bullets.copy():
+            bullet.update()
+            if math.dist((bullet.pos), (player.x, player.y)) < bullet.r + player.r:
+                player.health -= bullet.damage
+                enemy_bullets.remove(bullet)
+
         pygame.display.flip()
         fps_clock.tick(fps)
 
