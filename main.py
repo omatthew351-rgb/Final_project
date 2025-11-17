@@ -21,11 +21,13 @@ class Player:
         self.y = screen.get_height() / 2
         self.vx = 0
         self.vy = 0
-        self.health = 6
+        self.health = 2
         self.screen = screen
         self.r = 20
         self.tile_length = self.screen.get_height() / 10
         self.weapon = Weapon(3, 1000, 5000, 5)
+        self.trap_cd = 1000
+        self.last_trap = -10000
 
     def update(self, keys_held: set[int], door_open=False) -> None:
         ax, ay = 0, 0
@@ -322,7 +324,9 @@ def draw_background(screen, grid, room_number):
             elif value == 1:
                 pygame.draw.rect(
                     screen,
-                    (200, 200, 200),
+                    (200, 0, 0), (x*square_length, y*square_length, square_length, square_length))
+            elif value == 2:
+                pygame.draw.rect(screen, (255, 0, 0),
                     (
                         x * square_length,
                         y * square_length,
@@ -414,28 +418,59 @@ def main():
 
         keys_held = pygame.key.get_pressed()
         player.update(keys_held, len(enemies) == 0)
+        col = int(player.x // (screen.get_width() / 16))
+        row = int(player.y // (screen.get_height() / 10))
+        if 0 <= row < len(grid) and 0 <= col < len(grid[0]) and grid[row][col] == 2:
+            ticks = pygame.time.get_ticks()
+            if ticks - player.last_trap > player.trap_cd:
+                player.health -= 9999
+                player.last_trap = ticks
         if len(enemies) == 0:
             if player.y + player.r < 0:
                 direction = (0, 1)
-                change_room(screen, player, grid, grid, room_number, direction)
+                new_grid = [[0 for _ in range(16)] for _ in range(10)]
+                new_grid[3][5] = 1
+                trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
+                for y, x in trap_positions:
+                    new_grid[y][x] = 2
+                change_room(screen, player, grid, new_grid, room_number, direction)
+                grid = new_grid
                 room_number += 1
                 enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[0])
                 random.shuffle(difficulty)
             elif player.y - player.r > screen.get_height():
                 direction = (0, -1)
-                change_room(screen, player, grid, grid, room_number, direction)
+                new_grid = [[0 for _ in range(16)] for _ in range(10)]
+                new_grid[3][5] = 1
+                trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
+                for y, x in trap_positions:
+                    new_grid[y][x] = 2
+                change_room(screen, player, grid, new_grid, room_number, direction)
+                grid = new_grid
                 room_number += 1
                 enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[1])
                 random.shuffle(difficulty)
             if player.x + player.r < 0:
                 direction = (1, 0)
-                change_room(screen, player, grid, grid, room_number, direction)
+                new_grid = [[0 for _ in range(16)] for _ in range(10)]
+                new_grid[3][5] = 1
+                trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
+                for y, x in trap_positions:
+                    new_grid[y][x] = 2
+                change_room(screen, player, grid, new_grid, room_number, direction)
+                grid = new_grid
                 room_number += 1
                 enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[2])
                 random.shuffle(difficulty)
             elif player.x - player.r > screen.get_width():
                 direction = (-1, 0)
-                change_room(screen, player, grid, grid, room_number, direction)
+                new_grid = [[0 for _ in range(16)] for _ in range(10)]
+                new_grid[3][5] = 1
+                trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
+                for y, x in trap_positions:
+                    new_grid[y][x] = 2
+                change_room(screen, player, grid, new_grid, room_number, direction)
+                grid = new_grid
                 room_number += 1
                 enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[3])
                 random.shuffle(difficulty)
