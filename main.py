@@ -21,7 +21,7 @@ class Player:
         self.y = screen.get_height() / 2
         self.vx = 0
         self.vy = 0
-        self.health = 2
+        self.health = 3
         self.screen = screen
         self.r = 20
         self.tile_length = self.screen.get_height() / 10
@@ -134,6 +134,14 @@ class Player:
         self.vy *= 0.8
 
         pygame.draw.circle(self.screen, "#1f74f5", (self.x, self.y), self.r)
+        pygame.draw.rect(self.screen, "#00ff00", (5, 5, 20, 20))
+        pygame.draw.rect(self.screen, "#00ff00", (55, 5, 20, 20))
+        pygame.draw.rect(self.screen, "#00ff00", (105, 5, 20, 20))
+        if self.health == 2:
+            pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))
+        if self.health == 1:
+            pygame.draw.rect(self.screen, "#ff0000", (55, 5, 20, 20))
+            pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))
 
 
 class Projectile:
@@ -203,7 +211,7 @@ class Enemy:
         pygame.draw.rect(
             self.screen,
             "#ff0000",
-            (health_bar_x, health_bar_y, health_bar_length, health_bar_height),
+            (health_bar_x, health_bar_y, health_bar_length, health_bar_height)
         )
         pygame.draw.rect(
             self.screen,
@@ -213,7 +221,7 @@ class Enemy:
                 health_bar_y,
                 health_bar_length * (self.health / self.max_health),
                 health_bar_height,
-            ),
+            )
         )
         if "ranged" in self.special_tags:
 
@@ -429,7 +437,6 @@ def main():
             if player.y + player.r < 0:
                 direction = (0, 1)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
-                new_grid[3][5] = 1
                 trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
                 for y, x in trap_positions:
                     new_grid[y][x] = 2
@@ -441,7 +448,6 @@ def main():
             elif player.y - player.r > screen.get_height():
                 direction = (0, -1)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
-                new_grid[3][5] = 1
                 trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
                 for y, x in trap_positions:
                     new_grid[y][x] = 2
@@ -453,7 +459,6 @@ def main():
             if player.x + player.r < 0:
                 direction = (1, 0)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
-                new_grid[3][5] = 1
                 trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
                 for y, x in trap_positions:
                     new_grid[y][x] = 2
@@ -465,7 +470,6 @@ def main():
             elif player.x - player.r > screen.get_width():
                 direction = (-1, 0)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
-                new_grid[3][5] = 1
                 trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
                 for y, x in trap_positions:
                     new_grid[y][x] = 2
