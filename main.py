@@ -133,7 +133,15 @@ class Player:
         self.vx *= 0.8
         self.vy *= 0.8
 
-        pygame.draw.circle(self.screen, "#1f74f5", (self.x, self.y), self.r)
+        pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
+        pygame.draw.rect(self.screen, "#00ff00", (5, 5, 20, 20))
+        pygame.draw.rect(self.screen, "#00ff00", (55, 5, 20, 20))
+        pygame.draw.rect(self.screen, "#00ff00", (105, 5, 20, 20))
+        if self.health == 2:
+            pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))
+        if self.health == 1:
+            pygame.draw.rect(self.screen, "#ff0000", (55, 5, 20, 20))
+            pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))
 
 
 class Projectile:
