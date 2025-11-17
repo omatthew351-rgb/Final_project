@@ -21,7 +21,7 @@ class Player:
         self.y = screen.get_height() / 2
         self.vx = 0
         self.vy = 0
-        self.health = 2
+        self.health = 3
         self.screen = screen
         self.r = 20
         self.tile_length = self.screen.get_height() / 10
@@ -133,7 +133,7 @@ class Player:
         self.vx *= 0.8
         self.vy *= 0.8
 
-        pygame.draw.circle(self.screen, "#1f74f5", (self.x, self.y), self.r)
+        pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
 
 
 class Projectile:
@@ -242,12 +242,14 @@ class Weapon:
 
 def generate_enemies(screen, player_pos, room_num=1, difficulty=1) -> list[Enemy]:
     enemies = []
-
-    for _ in range(int(room_num**1.1) + difficulty*int((room_num//10)**(1.25))):
+    level = room_num//10+1
+    room_num %= 10
+    for _ in range(int(room_num**1.1) + difficulty*int((room_num/5)**(1.25))):
         enemy_stats = ENEMY_TYPES[random.choice(list(ENEMY_TYPES.keys()))]
         enemy = Enemy(screen, *enemy_stats)
         while math.dist((player_pos), (enemy.x, enemy.y)) < 300:
             enemy = Enemy(screen, *enemy_stats)
+        enemy.health *= level
         enemies.append(enemy)
     return enemies
 
@@ -324,7 +326,7 @@ def draw_background(screen, grid, room_number):
             elif value == 1:
                 pygame.draw.rect(
                     screen,
-                    (200, 0, 0), (x*square_length, y*square_length, square_length, square_length))
+                    (100, 100, 100), (x*square_length, y*square_length, square_length, square_length))
             elif value == 2:
                 pygame.draw.rect(screen, (255, 0, 0),
                     (
@@ -369,13 +371,13 @@ def main():
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
     room_number = 0
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
-    grid[3][5] = 1
     bullets = []
     enemies: list[Enemy] = []
+    square_length = screen.get_width() / 16
 
     while player.health > 0:
         draw_background(screen, grid, room_number)
@@ -418,19 +420,19 @@ def main():
 
         keys_held = pygame.key.get_pressed()
         player.update(keys_held, len(enemies) == 0)
-        col = int(player.x // (screen.get_width() / 16))
-        row = int(player.y // (screen.get_height() / 10))
-        if 0 <= row < len(grid) and 0 <= col < len(grid[0]) and grid[row][col] == 2:
-            ticks = pygame.time.get_ticks()
-            if ticks - player.last_trap > player.trap_cd:
-                player.health -= 9999
-                player.last_trap = ticks
+        for r, row in enumerate(grid):
+            for c, x in enumerate(row):
+                if x != 2:
+                    continue
+                if pygame.Rect((player.x-player.r, player.y-player.r, 2*player.r, 2*player.r)).colliderect(pygame.Rect(c*square_length, r*square_length, square_length, square_length)):
+                    player.health -= 1
+                    grid[r][c] = 1
+                    print(player.health)
         if len(enemies) == 0:
             if player.y + player.r < 0:
                 direction = (0, 1)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
-                new_grid[3][5] = 1
-                trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
+                trap_positions = random.sample([(y, x) for y in range(2, 8) for x in range(2, 14)], room_number//2)
                 for y, x in trap_positions:
                     new_grid[y][x] = 2
                 change_room(screen, player, grid, new_grid, room_number, direction)
@@ -441,8 +443,7 @@ def main():
             elif player.y - player.r > screen.get_height():
                 direction = (0, -1)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
-                new_grid[3][5] = 1
-                trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
+                trap_positions = random.sample([(y, x) for y in range(2, 8) for x in range(2, 14)], room_number//2)
                 for y, x in trap_positions:
                     new_grid[y][x] = 2
                 change_room(screen, player, grid, new_grid, room_number, direction)
@@ -453,8 +454,7 @@ def main():
             if player.x + player.r < 0:
                 direction = (1, 0)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
-                new_grid[3][5] = 1
-                trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
+                trap_positions = random.sample([(y, x) for y in range(2, 8) for x in range(2, 14)], room_number//2)
                 for y, x in trap_positions:
                     new_grid[y][x] = 2
                 change_room(screen, player, grid, new_grid, room_number, direction)
@@ -465,8 +465,7 @@ def main():
             elif player.x - player.r > screen.get_width():
                 direction = (-1, 0)
                 new_grid = [[0 for _ in range(16)] for _ in range(10)]
-                new_grid[3][5] = 1
-                trap_positions = random.sample([(y, x) for y in range(10) for x in range(16) if (y, x) != (3, 5)], 3)
+                trap_positions = random.sample([(y, x) for y in range(2, 8) for x in range(2, 14)], room_number//2)
                 for y, x in trap_positions:
                     new_grid[y][x] = 2
                 change_room(screen, player, grid, new_grid, room_number, direction)
