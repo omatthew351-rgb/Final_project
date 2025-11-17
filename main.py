@@ -9,14 +9,13 @@ import math
 WIDTH, HEIGHT = 800, 500
 #  r=20, health=3, speed=3, damage=1, cooldown=1000, color=(255, 0, 0), special_tags=None
 ENEMY_TYPES = {
-    1: [15, 3, 3, 1, 1000, (255, 0, 0)],
-    2: [20, 10, 1.5, 1, 1000, (0, 255, 0)],
-    3: [15, 5, 1, 1, 3000, (0, 0, 255), ["ranged"]],
+    1: [1, 15, 3, 3, 1, 1000, (255, 0, 0)],
+    2: [2, 20, 10, 1.5, 1, 1000, (0, 255, 0)],
+    3: [3, 15, 5, 1, 1, 3000, (0, 0, 255), ["ranged"]],
 }
 
 
 class Player:
-
     def __init__(self, screen: pygame.Surface):
         self.x = screen.get_width() / 2
         self.y = screen.get_height() / 2
@@ -164,6 +163,7 @@ class Enemy:
     def __init__(
         self,
         screen,
+        enemy_type,
         r=20,
         health=3,
         speed=3,
@@ -174,6 +174,7 @@ class Enemy:
     ):
         self.x = random.uniform(50, screen.get_width() - 50)
         self.y = random.uniform(50, screen.get_height() - 50)
+        self.type = enemy_type
         self.r = r
         self.health = health
         self.max_health = health
@@ -181,7 +182,7 @@ class Enemy:
         self.damage = damage
         self.cooldown = cooldown
         self.speed = speed
-        self.last_attack_time = 0
+        self.last_attack_time = pygame.time.get_ticks()
         self.color = color
         self.special_tags = [] if special_tags is None else special_tags
 
@@ -237,13 +238,15 @@ class Weapon:
         self.reloading = False
 
 
-def generate_enemies(screen, room_num=1, difficulty=1) -> list[Enemy]:
+def generate_enemies(screen, player_pos, room_num=1, difficulty=1) -> list[Enemy]:
     enemies = []
 
-    for _ in range(room_num + difficulty):
+    for _ in range(int(room_num**1.1) + difficulty*int((room_num//10)**(1.25))):
         enemy_stats = ENEMY_TYPES[random.choice(list(ENEMY_TYPES.keys()))]
-        enemies.append(Enemy(screen, *enemy_stats))
-
+        enemy = Enemy(screen, *enemy_stats)
+        while math.dist((player_pos), (enemy.x, enemy.y)) < 300:
+            enemy = Enemy(screen, *enemy_stats)
+        enemies.append(enemy)
     return enemies
 
 
@@ -362,13 +365,13 @@ def main():
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
     room_number = 0
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
     grid[3][5] = 1
     bullets = []
-    enemies: list[Enemy] = []  # generate_enemies(screen, 5)
+    enemies: list[Enemy] = []
 
     while player.health > 0:
         draw_background(screen, grid, room_number)
@@ -387,7 +390,7 @@ def main():
                     sys.exit()
                 elif event.key == pygame.K_r:
                     player.weapon.reloading = True
-                    pygame.time.set_timer(Player_reload, player.weapon.reload_time)
+                    pygame.time.set_timer(Player_reload, player.weapon.reload_time)        
         if pygame.mouse.get_pressed()[0]:
             if (
                 pygame.time.get_ticks() - player.weapon.last_attack_time
@@ -416,25 +419,25 @@ def main():
                 direction = (0, 1)
                 change_room(screen, player, grid, grid, room_number, direction)
                 room_number += 1
-                enemies = generate_enemies(screen, room_number, difficulty[0])
+                enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[0])
                 random.shuffle(difficulty)
             elif player.y - player.r > screen.get_height():
                 direction = (0, -1)
                 change_room(screen, player, grid, grid, room_number, direction)
                 room_number += 1
-                enemies = generate_enemies(screen, room_number, difficulty[1])
+                enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[1])
                 random.shuffle(difficulty)
             if player.x + player.r < 0:
                 direction = (1, 0)
                 change_room(screen, player, grid, grid, room_number, direction)
                 room_number += 1
-                enemies = generate_enemies(screen, room_number, difficulty[2])
+                enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[2])
                 random.shuffle(difficulty)
             elif player.x - player.r > screen.get_width():
                 direction = (-1, 0)
                 change_room(screen, player, grid, grid, room_number, direction)
                 room_number += 1
-                enemies = generate_enemies(screen, room_number, difficulty[3])
+                enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[3])
                 random.shuffle(difficulty)
 
         for enemy in enemies:
