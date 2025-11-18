@@ -4,6 +4,7 @@ import pygame
 import pygame.locals
 import random
 import math
+import time
 
 
 
@@ -44,7 +45,7 @@ class Player:
         self.screen = screen
         self.tile_length = self.screen.get_height() / 10
         self.r = self.tile_length/3
-        self.weapon = Weapon(3, 1000, 5000, 10)
+        self.weapon = Weapon(3, 1000, 5000, 3)
         self.trap_cd = 1000
         self.last_trap = -10000
 
@@ -152,16 +153,7 @@ class Player:
         self.vx *= 0.8
         self.vy *= 0.8
 
-        pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
-
-        # pygame.draw.rect(self.screen, "#00ff00", (5, 5, 20, 20))
-        # pygame.draw.rect(self.screen, "#00ff00", (55, 5, 20, 20))
-        # pygame.draw.rect(self.screen, "#00ff00", (105, 5, 20, 20))
-        # if self.health == 2:
-        #     pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))
-        # if self.health == 1:
-        #     pygame.draw.rect(self.screen, "#ff0000", (55, 5, 20, 20))
-        #     pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))                      
+        pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))                
         scaled_heart = pygame.transform.scale(heart, (100, 100))
         if self.health == 3:
             self.screen.blit(scaled_heart, (5, 5))
@@ -175,35 +167,7 @@ class Player:
         scaled_bullet = pygame.transform.scale(bullet, (100, 100))
         
         for i in range(self.weapon.bullet_count):
-            self.screen.blit(scaled_bullet, (1605-i*50, 5))
-        # if self.weapon.bullet_count == 6:
-        #     self.screen.blit(scaled_bullet, (1105, 5))
-        #     self.screen.blit(scaled_bullet, (1205, 5))
-        #     self.screen.blit(scaled_bullet, (1305, 5))
-        #     self.screen.blit(scaled_bullet, (1405, 5))
-        #     self.screen.blit(scaled_bullet, (1505, 5))
-        #     self.screen.blit(scaled_bullet, (1605, 5))
-        # elif self.weapon.bullet_count == 5:
-        #     self.screen.blit(scaled_bullet, (1205, 5))
-        #     self.screen.blit(scaled_bullet, (1305, 5))
-        #     self.screen.blit(scaled_bullet, (1405, 5))
-        #     self.screen.blit(scaled_bullet, (1505, 5))
-        #     self.screen.blit(scaled_bullet, (1605, 5))
-        # elif self.weapon.bullet_count == 4:
-        #     self.screen.blit(scaled_bullet, (1605, 5))
-        #     self.screen.blit(scaled_bullet, (1305, 5))
-        #     self.screen.blit(scaled_bullet, (1405, 5))
-        #     self.screen.blit(scaled_bullet, (1505, 5))
-        # elif self.weapon.bullet_count == 3:
-        #     self.screen.blit(scaled_bullet, (1605, 5))
-        #     self.screen.blit(scaled_bullet, (1505, 5))
-        #     self.screen.blit(scaled_bullet, (1405, 5))
-        # elif self.weapon.bullet_count == 2:
-        #     self.screen.blit(scaled_bullet, (1605, 5))
-        #     self.screen.blit(scaled_bullet, (1505, 5))
-        # elif self.weapon.bullet_count == 1:
-        #     self.screen.blit(scaled_bullet, (1605, 5))
-
+            self.screen.blit(scaled_bullet, (self.screen.get_width()-(i+1.5)*50, 5))
 
 
 class Projectile:
@@ -215,9 +179,9 @@ class Projectile:
         self.screen = screen
         self.damage = damage
 
-    def update(self):
+    def update(self, color="#1f74f5"):
         self.pos += self.direction * self.speed
-        pygame.draw.circle(self.screen, "#1f74f5", (self.pos), self.r)
+        pygame.draw.circle(self.screen, color, (self.pos), self.r)
 
     def in_border(self) -> bool:
         if self.pos.x < self.screen.get_width() / 32 + self.r:
@@ -331,6 +295,8 @@ def change_room(screen, player, old_grid, new_grid, room_number, direction):
     new_room = pygame.Surface((screen.get_width(), screen.get_height()))
     draw_background(old_room, old_grid, room_number)
     draw_background(new_room, new_grid, room_number + 1)
+    draw_bottom_wall(old_room, old_grid, True)
+    draw_bottom_wall(new_room, new_grid, True)
     player.weapon.bullet_count = player.weapon.max_bullet
     for offset in range(
         0,
@@ -367,9 +333,35 @@ def change_room(screen, player, old_grid, new_grid, room_number, direction):
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-
     player.x += screen.get_width() * direction[0]
     player.y += screen.get_height() * direction[1]
+    screen.blit(new_room)
+    pygame.draw.circle(
+            screen,
+            "#1f74f5",
+            (player.x, player.y),
+            player.r,
+        )
+    upgrade = random.randint(1, 4)
+    if upgrade == 1:
+        player.weapon.damage *= 1.1
+        text = difficulty_font.render("Increased bullet damage", True, (255, 255, 255))
+    elif upgrade == 2:
+        player.weapon.reload_time *= 0.9
+        text = difficulty_font.render("Decreased reload time", True, (255, 255, 255))
+    elif upgrade == 3:
+        player.weapon.cooldown *= 0.9
+        text = difficulty_font.render("Decreased shooting cooldown", True, (255, 255, 255))
+    elif upgrade == 4:
+        player.weapon.max_bullet += 2
+        text = difficulty_font.render("Increased bullet count", True, (255, 255, 255))
+    textpos = text.get_rect(
+        centerx=player.x, centery=player.y - player.r
+    )
+    screen.blit(text, textpos)
+    pygame.display.flip()
+    time.sleep(1)
+    
 
 
 def draw_background(screen, grid, room_number, door_open=True):
@@ -445,6 +437,23 @@ def draw_background(screen, grid, room_number, door_open=True):
     screen.blit(text, textpos)
 
 
+def draw_bottom_wall(screen, grid, door_open):
+    square_length = screen.get_width() / 16
+    for i in range(len(grid[-1])):
+        if i == 0:
+            screen.blit(left_bottom_corner_img, (i * square_length, (9+11/30) * square_length, square_length, square_length))
+        elif i == 15:
+            screen.blit(right_bottom_corner_img, (i * square_length, (9+11/30) * square_length, square_length, square_length))
+        else:
+            if not door_open or not (i == 7 or i == 8):
+                screen.blit(bottom_wall_img, (i * square_length, (9+11/30) * square_length, square_length, square_length))
+    text = difficulty_font.render(str(difficulty[1]), True, (255, 255, 255))
+    textpos = text.get_rect(
+        centerx=screen.get_width() / 2, centery=screen.get_height() - square_length / 2
+    )
+    screen.blit(text, textpos)
+
+
 def main():
     global floor_img, left_wall_img, right_wall_img, top_wall_img, bottom_wall_img, left_door_img
     global left_top_corner_img, right_top_corner_img, left_bottom_corner_img, right_bottom_corner_img, right_door_img
@@ -509,7 +518,7 @@ def main():
                     player.weapon.bullet_count -= 1
                 elif not player.weapon.reloading:
                     player.weapon.reloading = True
-                    pygame.time.set_timer(Player_reload, player.weapon.reload_time)
+                    pygame.time.set_timer(Player_reload, int(player.weapon.reload_time))
 
         keys_held = pygame.key.get_pressed()
         player.update(keys_held, len(enemies) == 0)
@@ -617,13 +626,13 @@ def main():
         bullets = [bullet for bullet in bullets if not bullet.in_border()]
 
         for bullet in enemy_bullets.copy():
-            bullet.update()
+            bullet.update((255, 0, 0))
             if math.dist((bullet.pos), (player.x, player.y)) < bullet.r + player.r:
                 player.health -= bullet.damage
                 enemy_bullets.remove(bullet)
 
 
-        # draw_bottom_walls(screen, grid, len(enemies) == 0)
+        draw_bottom_wall(screen, grid, len(enemies) == 0)
         pygame.display.flip()
         fps_clock.tick(fps)
 
