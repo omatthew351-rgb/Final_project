@@ -32,10 +32,13 @@ top_wall_img = pygame.image.load('top_wall.png')
 bottom_wall_img = pygame.image.load('bottom_wall.png')
 left_top_corner_img = pygame.image.load('left_top_corner.png')
 left_bottom_corner_img = pygame.image.load('left_bottom_corner.png')
-heart = pygame.image.load('2025_11_17_0j9_Kleki.png')
+heart_img = pygame.image.load('2025_11_17_0j9_Kleki.png')
+dead_heart_img = heart = pygame.image.load('dead_heart.png')
 bullet = pygame.image.load('2025_11_18_0i8_Kleki.png')
 player_sprite = pygame.image.load('pixilart-drawing (1).png')
 enemy_sprite = pygame.image.load('pixil-frame-0.png')
+
+
 class Player:
     def __init__(self, screen: pygame.Surface):
         self.x = screen.get_width() / 2
@@ -43,120 +46,124 @@ class Player:
         self.vx = 0
         self.vy = 0
         self.health = 3
+        self.max_health = self.health
         self.screen = screen
         self.tile_length = self.screen.get_height() / 10
+        self.speed = self.tile_length/200
         self.r = self.tile_length/3
-        self.weapon = Weapon(3, 1000, 5000, 3)
-        self.trap_cd = 1000
-        self.last_trap = -10000
+        self.weapon = Weapon(3, 1000, 3000, 5)
+        self.last_upgrade = -3000
+        self.upgrade_text = difficulty_font.render("No Upgrade", True, (255, 255, 255))
 
-    def update(self, keys_held: set[int], door_open=False) -> None:
+    def update(self, keys_held: set[int] | None = None, door_open=False) -> None:
         ax, ay = 0, 0
-        if keys_held[pygame.K_UP] or keys_held[pygame.K_w]:
-            ay -= 1
-        if keys_held[pygame.K_DOWN] or keys_held[pygame.K_s]:
-            ay += 1
-        if keys_held[pygame.K_LEFT] or keys_held[pygame.K_a]:
-            ax -= 1
-        if keys_held[pygame.K_RIGHT] or keys_held[pygame.K_d]:
-            ax += 1
-        if ax != 0 and ay != 0:
-            acceleration = pygame.Vector2(ax, ay).clamp_magnitude(1)
-            ax = acceleration.x
-            ay = acceleration.y
-        self.vx += ax
-        self.vy += ay
-        self.x += self.vx
-        self.y += self.vy
+        if keys_held is not None:
+            if keys_held[pygame.K_UP] or keys_held[pygame.K_w]:
+                ay -= self.speed
+            if keys_held[pygame.K_DOWN] or keys_held[pygame.K_s]:
+                ay += self.speed
+            if keys_held[pygame.K_LEFT] or keys_held[pygame.K_a]:
+                ax -= self.speed
+            if keys_held[pygame.K_RIGHT] or keys_held[pygame.K_d]:
+                ax += self.speed
+            if ax != 0 and ay != 0:
+                acceleration = pygame.Vector2(ax, ay).clamp_magnitude(self.speed)
+                print(acceleration)
+                ax = acceleration.x
+                ay = acceleration.y
+            self.vx += ax
+            self.vy += ay
+            self.x += self.vx
+            self.y += self.vy
 
-        if door_open:
-            if not (
-                self.tile_length * 4 + self.r < self.y < self.tile_length * 6 - self.r
-            ):  # check in door
+            if door_open:
+                if not (
+                    self.tile_length * 4 + self.r < self.y < self.tile_length * 6 - self.r
+                ):  # check in door
+
+                    if self.x < self.tile_length / 2 + self.r:
+                        if not (
+                            self.tile_length * 4 + self.r
+                            < self.y - self.vy / 4 * 5
+                            < self.tile_length * 6 - self.r
+                        ):  # if was not in door before, normal else push back in the door
+                            self.x = self.tile_length / 2 + self.r
+                            self.vx = 0
+                        else:
+                            self.y = max(
+                                self.tile_length * 4 + self.r,
+                                min(self.tile_length * 6 - self.r, self.y),
+                            )
+
+                    if self.x > self.screen.get_width() - self.tile_length / 2 - self.r:
+                        if not (
+                            self.tile_length * 4 + self.r
+                            < self.y - self.vy / 2 * 5
+                            < self.tile_length * 6 - self.r
+                        ):
+                            self.x = self.screen.get_width() - self.tile_length / 2 - self.r
+                            self.vx = 0
+                        else:
+                            self.y = max(
+                                self.tile_length * 4 + self.r,
+                                min(self.tile_length * 6 - self.r, self.y),
+                            )
+
+                if not (
+                    self.tile_length * 7 + self.r < self.x < self.tile_length * 9 - self.r
+                ):
+
+                    if self.y < self.tile_length / 2 + self.r:
+                        if not (
+                            self.tile_length * 7 + self.r
+                            < self.x - self.vx / 4 * 5
+                            < self.tile_length * 9 - self.r
+                        ):
+                            self.y = self.tile_length / 2 + self.r
+                            self.vy = 0
+                        else:
+                            self.x = max(
+                                self.tile_length * 7 + self.r,
+                                min(self.tile_length * 9 - self.r, self.x),
+                            )
+                    if self.y > self.screen.get_height() - self.tile_length / 2 - self.r:
+                        if not (
+                            self.tile_length * 7 + self.r
+                            < self.x - self.vx / 4 * 5
+                            < self.tile_length * 9 - self.r
+                        ):
+                            self.y = (
+                                self.screen.get_height() - self.tile_length / 2 - self.r
+                            )
+                            self.vy = 0
+                        else:
+                            self.x = max(
+                                self.tile_length * 7 + self.r,
+                                min(self.tile_length * 9 - self.r, self.x),
+                            )
+
+            else:
 
                 if self.x < self.tile_length / 2 + self.r:
-                    if not (
-                        self.tile_length * 4 + self.r
-                        < self.y - self.vy / 4 * 5
-                        < self.tile_length * 6 - self.r
-                    ):  # if was not in door before, normal else push back in the door
-                        self.x = self.tile_length / 2 + self.r
-                        self.vx = 0
-                    else:
-                        self.y = max(
-                            self.tile_length * 4 + self.r,
-                            min(self.tile_length * 6 - self.r, self.y),
-                        )
-
-                if self.x > self.screen.get_width() - self.tile_length / 2 - self.r:
-                    if not (
-                        self.tile_length * 4 + self.r
-                        < self.y - self.vy / 2 * 5
-                        < self.tile_length * 6 - self.r
-                    ):
-                        self.x = self.screen.get_width() - self.tile_length / 2 - self.r
-                        self.vx = 0
-                    else:
-                        self.y = max(
-                            self.tile_length * 4 + self.r,
-                            min(self.tile_length * 6 - self.r, self.y),
-                        )
-
-            if not (
-                self.tile_length * 7 + self.r < self.x < self.tile_length * 9 - self.r
-            ):
+                    self.x = self.tile_length / 2 + self.r
+                    self.vx = 0
+                elif self.x > self.screen.get_width() - self.tile_length / 2 - self.r:
+                    self.x = self.screen.get_width() - self.tile_length / 2 - self.r
+                    self.vx = 0
 
                 if self.y < self.tile_length / 2 + self.r:
-                    if not (
-                        self.tile_length * 7 + self.r
-                        < self.x - self.vx / 4 * 5
-                        < self.tile_length * 9 - self.r
-                    ):
-                        self.y = self.tile_length / 2 + self.r
-                        self.vy = 0
-                    else:
-                        self.x = max(
-                            self.tile_length * 7 + self.r,
-                            min(self.tile_length * 9 - self.r, self.x),
-                        )
+                    self.y = self.tile_length / 2 + self.r
+                    self.vy = 0
                 if self.y > self.screen.get_height() - self.tile_length / 2 - self.r:
-                    if not (
-                        self.tile_length * 7 + self.r
-                        < self.x - self.vx / 4 * 5
-                        < self.tile_length * 9 - self.r
-                    ):
-                        self.y = (
-                            self.screen.get_height() - self.tile_length / 2 - self.r
-                        )
-                        self.vy = 0
-                    else:
-                        self.x = max(
-                            self.tile_length * 7 + self.r,
-                            min(self.tile_length * 9 - self.r, self.x),
-                        )
+                    self.y = self.screen.get_height() - self.tile_length / 2 - self.r
+                    self.vy = 0
 
-        else:
-
-            if self.x < self.tile_length / 2 + self.r:
-                self.x = self.tile_length / 2 + self.r
-                self.vx = 0
-            elif self.x > self.screen.get_width() - self.tile_length / 2 - self.r:
-                self.x = self.screen.get_width() - self.tile_length / 2 - self.r
-                self.vx = 0
-
-            if self.y < self.tile_length / 2 + self.r:
-                self.y = self.tile_length / 2 + self.r
-                self.vy = 0
-            if self.y > self.screen.get_height() - self.tile_length / 2 - self.r:
-                self.y = self.screen.get_height() - self.tile_length / 2 - self.r
-                self.vy = 0
-
-        self.vx *= 0.8
-        self.vy *= 0.8
+            self.vx *= 0.9
+            self.vy *= 0.9
 
         # pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
-        scaled_player = pygame.transform.scale(player_sprite, ((self.tile_length*2)/3, (self.tile_length*2)/3))
-        self.screen.blit(scaled_player, (self.x-self.r, self.y-self.r))
+        
+        self.screen.blit(player_sprite, (self.x-self.r, self.y-self.r))
 
         # pygame.draw.rect(self.screen, "#00ff00", (5, 5, 20, 20))
         # pygame.draw.rect(self.screen, "#00ff00", (55, 5, 20, 20))
@@ -166,28 +173,48 @@ class Player:
         # if self.health == 1:
         #     pygame.draw.rect(self.screen, "#ff0000", (55, 5, 20, 20))
         #     pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))                      
-        scaled_heart = pygame.transform.scale(heart, (100, 100))
-        if self.health == 3:
-            self.screen.blit(scaled_heart, (5, 5))
-            self.screen.blit(scaled_heart, (105, 5))
-            self.screen.blit(scaled_heart, (205, 5))
-        elif self.health == 2:
-            self.screen.blit(scaled_heart, (5, 5))
-            self.screen.blit(scaled_heart, (105, 5))
-        elif self.health == 1:
-            self.screen.blit(scaled_heart, (5, 5))
-        scaled_bullet = pygame.transform.scale(bullet, (100, 100))
         
+        for i in range(self.max_health):
+            self.screen.blit(dead_heart_img, (5+self.tile_length*i, self.tile_length/10))
+        for i in range(self.health):
+            self.screen.blit(heart_img, (5+self.tile_length*i, self.tile_length/10))
+
+        scaled_bullet = pygame.transform.scale(bullet, (self.tile_length, self.tile_length))
         for i in range(self.weapon.bullet_count):
-            self.screen.blit(scaled_bullet, (self.screen.get_width()-(i+1.5)*50, 5))
+            self.screen.blit(scaled_bullet, (self.screen.get_width()-(i+1.5)*self.tile_length/2, 5))
 
+        if pygame.time.get_ticks() - self.last_upgrade < 3000:
+            textpos = self.upgrade_text.get_rect(
+            centerx=self.x, centery=self.y - 2*self.r
+            )
+            self.screen.blit(self.upgrade_text, textpos)
 
+    def upgrade(self, upgrade):
+        self.last_upgrade = pygame.time.get_ticks()
+        print(upgrade)
+        if upgrade == 1:
+            self.weapon.damage *= 1.1
+            self.upgrade_text = difficulty_font.render("Bullet damage increased", True, (255, 255, 255))
+        elif upgrade == 2:
+            self.weapon.reload_time *= 0.9
+            self.upgrade_text = difficulty_font.render("Reload time decreased", True, (255, 255, 255))
+        elif upgrade == 3:
+            self.weapon.cooldown *= 0.9
+            self.upgrade_text = difficulty_font.render("Shooting cooldown decreased", True, (255, 255, 255))
+        elif upgrade == 4:
+            self.weapon.max_bullet += 2
+            self.upgrade_text = difficulty_font.render("Bullet count increased", True, (255, 255, 255))
+        elif upgrade == 5:
+            self.speed += 0.1
+            self.upgrade_text = difficulty_font.render("Speed increased", True, (255, 255, 255))
+        
 class Projectile:
     def __init__(self, screen, start_pos, direction, damage) -> None:
         self.pos = pygame.Vector2(start_pos)
         self.direction = pygame.Vector2(direction).normalize()
-        self.speed = 8
-        self.r = 5
+        self.tile_length = screen.get_width()/16
+        self.speed = self.tile_length/6
+        self.r = self.tile_length/12
         self.screen = screen
         self.damage = damage
 
@@ -227,13 +254,13 @@ class Enemy:
         self.health = health
         self.max_health = health
         self.screen = screen
+        self.tile_length = self.screen.get_height() / 10
         self.damage = damage
         self.cooldown = cooldown
-        self.speed = speed
+        self.speed = speed*self.tile_length/60
         self.last_attack_time = pygame.time.get_ticks()
         self.color = color
         self.special_tags = [] if special_tags is None else special_tags
-        self.tile_length = self.screen.get_height() / 10
         self.r = self.r/60*self.tile_length
 
     def update(self, player_x, player_y) -> None:
@@ -244,10 +271,10 @@ class Enemy:
         self.x += dist_x / length * self.speed
         self.y += dist_y / length * self.speed
         pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.r)
-        health_bar_length = 30
-        health_bar_height = 5
-        health_bar_x = self.x - health_bar_length / 2
-        health_bar_y = self.y - self.r - 10
+        health_bar_length = self.tile_length*3/4
+        health_bar_height = health_bar_length/8
+        health_bar_x = self.x - health_bar_length/2
+        health_bar_y = self.y - self.r - health_bar_height*3/2
         pygame.draw.rect(
             self.screen,
             "#ff0000",
@@ -292,12 +319,13 @@ def generate_enemies(screen, player_pos, room_num=1, difficulty=1) -> list[Enemy
     enemies = []
     level = room_num//10+1
     room_num %= 10
-    for _ in range(int(room_num**1.1) + difficulty*int((room_num/5)**(1.25))):
+    for _ in range(int(room_num**1.1 + difficulty*(room_num/5)**(1.25))):
         enemy_stats = ENEMY_TYPES[random.choice(list(ENEMY_TYPES.keys()))]
         enemy = Enemy(screen, *enemy_stats)
         while math.dist((player_pos), (enemy.x, enemy.y)) < 300:
             enemy = Enemy(screen, *enemy_stats)
-        enemy.health *= level
+        enemy.health *= 2**(level-1)
+        enemy.max_health *= 2**(level-1)
         enemies.append(enemy)
     return enemies
 
@@ -310,13 +338,14 @@ def change_room(screen, player, old_grid, new_grid, room_number, direction):
     draw_bottom_wall(old_room, old_grid, True)
     draw_bottom_wall(new_room, new_grid, True)
     player.weapon.bullet_count = player.weapon.max_bullet
+    speed = screen.get_width()//700
     for offset in range(
         0,
         max(
             screen.get_height() * abs(direction[1]),
             screen.get_width() * abs(direction[0]),
         ),
-        2,
+        speed,
     ):
         screen.blits(
             [
@@ -330,12 +359,9 @@ def change_room(screen, player, old_grid, new_grid, room_number, direction):
                 ),
             ]
         )
-        pygame.draw.circle(
-            screen,
-            "#1f74f5",
-            (player.x + offset * direction[0], player.y + offset * direction[1]),
-            player.r,
-        )
+        player.x += speed * direction[0]
+        player.y += speed * direction[1]
+        player.update()
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
@@ -345,37 +371,9 @@ def change_room(screen, player, old_grid, new_grid, room_number, direction):
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-    player.x += screen.get_width() * direction[0]
-    player.y += screen.get_height() * direction[1]
     screen.blit(new_room)
-    pygame.draw.circle(
-            screen,
-            "#1f74f5",
-            (player.x, player.y),
-            player.r,
-        )
-    upgrade = random.randint(1, 4)
-    if upgrade == 1:
-        player.weapon.damage *= 1.1
-        text = difficulty_font.render("Increased bullet damage", True, (255, 255, 255))
-    elif upgrade == 2:
-        player.weapon.reload_time *= 0.9
-        text = difficulty_font.render("Decreased reload time", True, (255, 255, 255))
-    elif upgrade == 3:
-        player.weapon.cooldown *= 0.9
-        text = difficulty_font.render("Decreased shooting cooldown", True, (255, 255, 255))
-    elif upgrade == 4:
-        player.weapon.max_bullet += 2
-        text = difficulty_font.render("Increased bullet count", True, (255, 255, 255))
-    textpos = text.get_rect(
-        centerx=player.x, centery=player.y - player.r
-    )
-    screen.blit(text, textpos)
-    pygame.display.flip()
-    time.sleep(1)
+    player.upgrade(random.randint(1, 5))
     
-
-
 def draw_background(screen, grid, room_number, door_open=True):
     screen.fill((100, 100, 100))
     square_length = screen.get_width() / 16
@@ -467,8 +465,9 @@ def draw_bottom_wall(screen, grid, door_open):
 
 
 def main():
-    global floor_img, left_wall_img, right_wall_img, top_wall_img, bottom_wall_img, left_door_img
-    global left_top_corner_img, right_top_corner_img, left_bottom_corner_img, right_bottom_corner_img, right_door_img
+    global floor_img, left_wall_img, right_wall_img, top_wall_img, bottom_wall_img, left_door_img, player_sprite
+    global left_top_corner_img, right_top_corner_img, left_bottom_corner_img, right_bottom_corner_img, right_door_img, heart_img, dead_heart_img
+    global enemy_bullets
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
@@ -490,7 +489,9 @@ def main():
     right_top_corner_img = pygame.transform.flip(left_top_corner_img, True, False)
     left_bottom_corner_img = pygame.transform.scale(left_bottom_corner_img, (square_length, square_length*19/30))
     right_bottom_corner_img = pygame.transform.flip(left_bottom_corner_img, True, False)
-
+    heart_img = pygame.transform.scale(heart_img, (square_length, square_length))
+    dead_heart_img = pygame.transform.scale(dead_heart_img, (square_length, square_length))
+    player_sprite = pygame.transform.scale(player_sprite, ((square_length*2)/3, (square_length*2)/3))
 
 
     while player.health > 0:
@@ -510,7 +511,7 @@ def main():
                     sys.exit()
                 elif event.key == pygame.K_r:
                     player.weapon.reloading = True
-                    pygame.time.set_timer(Player_reload, player.weapon.reload_time)        
+                    pygame.time.set_timer(Player_reload, int(player.weapon.reload_time))        
         if pygame.mouse.get_pressed()[0]:
             if (
                 pygame.time.get_ticks() - player.weapon.last_attack_time
@@ -633,6 +634,8 @@ def main():
                     enemies[enemies.index(enemy)].health -= bullet.damage
                     if enemies[enemies.index(enemy)].health <= 0:
                         enemies.remove(enemy)
+                        if random.randint(1, 5) == 1:
+                            player.upgrade(random.randint(1, 5))
                     bullets.remove(bullet)
                     break
         bullets = [bullet for bullet in bullets if not bullet.in_border()]
@@ -642,11 +645,15 @@ def main():
             if math.dist((bullet.pos), (player.x, player.y)) < bullet.r + player.r:
                 player.health -= bullet.damage
                 enemy_bullets.remove(bullet)
-
+        enemy_bullets = [bullet for bullet in enemy_bullets if not bullet.in_border()]
 
         draw_bottom_wall(screen, grid, len(enemies) == 0)
         pygame.display.flip()
         fps_clock.tick(fps)
+
+        if player.weapon.bullet_count == 0 and not player.weapon.reloading:
+            player.weapon.reloading = True
+            pygame.time.set_timer(Player_reload, int(player.weapon.reload_time))  
 
 
 if __name__ == "__main__":
