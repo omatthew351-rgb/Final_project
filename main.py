@@ -34,7 +34,8 @@ left_top_corner_img = pygame.image.load('left_top_corner.png')
 left_bottom_corner_img = pygame.image.load('left_bottom_corner.png')
 heart = pygame.image.load('2025_11_17_0j9_Kleki.png')
 bullet = pygame.image.load('2025_11_18_0i8_Kleki.png')
-
+player_sprite = pygame.image.load('pixilart-drawing (1).png')
+enemy_sprite = pygame.image.load('pixil-frame-0.png')
 class Player:
     def __init__(self, screen: pygame.Surface):
         self.x = screen.get_width() / 2
@@ -153,7 +154,18 @@ class Player:
         self.vx *= 0.8
         self.vy *= 0.8
 
-        pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))                
+        # pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
+        scaled_player = pygame.transform.scale(player_sprite, ((self.tile_length*2)/3, (self.tile_length*2)/3))
+        self.screen.blit(scaled_player, (self.x-self.r, self.y-self.r))
+
+        # pygame.draw.rect(self.screen, "#00ff00", (5, 5, 20, 20))
+        # pygame.draw.rect(self.screen, "#00ff00", (55, 5, 20, 20))
+        # pygame.draw.rect(self.screen, "#00ff00", (105, 5, 20, 20))
+        # if self.health == 2:
+        #     pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))
+        # if self.health == 1:
+        #     pygame.draw.rect(self.screen, "#ff0000", (55, 5, 20, 20))
+        #     pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))                      
         scaled_heart = pygame.transform.scale(heart, (100, 100))
         if self.health == 3:
             self.screen.blit(scaled_heart, (5, 5))
