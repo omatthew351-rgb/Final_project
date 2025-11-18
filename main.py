@@ -5,7 +5,6 @@ import pygame.locals
 import random
 import math
 
-image = pygame.image.load('2025_11_17_0j9_Kleki.png')
 
 
 
@@ -32,6 +31,8 @@ top_wall_img = pygame.image.load('top_wall.png')
 bottom_wall_img = pygame.image.load('bottom_wall.png')
 left_top_corner_img = pygame.image.load('left_top_corner.png')
 left_bottom_corner_img = pygame.image.load('left_bottom_corner.png')
+heart = pygame.image.load('2025_11_17_0j9_Kleki.png')
+bullet = pygame.image.load('2025_11_18_0i8_Kleki.png')
 
 class Player:
     def __init__(self, screen: pygame.Surface):
@@ -43,7 +44,7 @@ class Player:
         self.screen = screen
         self.tile_length = self.screen.get_height() / 10
         self.r = self.tile_length/3
-        self.weapon = Weapon(3, 1000, 5000, 5)
+        self.weapon = Weapon(3, 1000, 5000, 10)
         self.trap_cd = 1000
         self.last_trap = -10000
 
@@ -152,25 +153,57 @@ class Player:
         self.vy *= 0.8
 
         pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
-<<<<<<< HEAD
-        # self.screen.blit(image, (5, 5))
-        # self.screen.blit(image, (55, 5))
-        # self.screen.blit(image, (105, 5))
-=======
-        # self.screen.blit(player_img, pygame.Rect(self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
->>>>>>> 0edb0ee2f0557d590eb71b063d2b8a19dc15e9a8
-        pygame.draw.rect(self.screen, "#00ff00", (5, 5, 20, 20))
-        pygame.draw.rect(self.screen, "#00ff00", (55, 5, 20, 20))
-        pygame.draw.rect(self.screen, "#00ff00", (105, 5, 20, 20))
-        if self.health == 2:
-            pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))
-        if self.health == 1:
-            pygame.draw.rect(self.screen, "#ff0000", (55, 5, 20, 20))
-            pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))                      #left off here 11/17
-        # image = pygame.Surface((100, 60))
-        # image.fill(pygame.Color('sienna2'))
-        # pygame.draw.circle(image, pygame.Color('royalblue2'), (50, 30), 20)
-        # image = pygame.transform.scale(image, (50, 30))
+
+        # pygame.draw.rect(self.screen, "#00ff00", (5, 5, 20, 20))
+        # pygame.draw.rect(self.screen, "#00ff00", (55, 5, 20, 20))
+        # pygame.draw.rect(self.screen, "#00ff00", (105, 5, 20, 20))
+        # if self.health == 2:
+        #     pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))
+        # if self.health == 1:
+        #     pygame.draw.rect(self.screen, "#ff0000", (55, 5, 20, 20))
+        #     pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))                      
+        scaled_heart = pygame.transform.scale(heart, (100, 100))
+        if self.health == 3:
+            self.screen.blit(scaled_heart, (5, 5))
+            self.screen.blit(scaled_heart, (105, 5))
+            self.screen.blit(scaled_heart, (205, 5))
+        elif self.health == 2:
+            self.screen.blit(scaled_heart, (5, 5))
+            self.screen.blit(scaled_heart, (105, 5))
+        elif self.health == 1:
+            self.screen.blit(scaled_heart, (5, 5))
+        scaled_bullet = pygame.transform.scale(bullet, (100, 100))
+        
+        for i in range(self.weapon.bullet_count):
+            self.screen.blit(scaled_bullet, (1605-i*50, 5))
+        # if self.weapon.bullet_count == 6:
+        #     self.screen.blit(scaled_bullet, (1105, 5))
+        #     self.screen.blit(scaled_bullet, (1205, 5))
+        #     self.screen.blit(scaled_bullet, (1305, 5))
+        #     self.screen.blit(scaled_bullet, (1405, 5))
+        #     self.screen.blit(scaled_bullet, (1505, 5))
+        #     self.screen.blit(scaled_bullet, (1605, 5))
+        # elif self.weapon.bullet_count == 5:
+        #     self.screen.blit(scaled_bullet, (1205, 5))
+        #     self.screen.blit(scaled_bullet, (1305, 5))
+        #     self.screen.blit(scaled_bullet, (1405, 5))
+        #     self.screen.blit(scaled_bullet, (1505, 5))
+        #     self.screen.blit(scaled_bullet, (1605, 5))
+        # elif self.weapon.bullet_count == 4:
+        #     self.screen.blit(scaled_bullet, (1605, 5))
+        #     self.screen.blit(scaled_bullet, (1305, 5))
+        #     self.screen.blit(scaled_bullet, (1405, 5))
+        #     self.screen.blit(scaled_bullet, (1505, 5))
+        # elif self.weapon.bullet_count == 3:
+        #     self.screen.blit(scaled_bullet, (1605, 5))
+        #     self.screen.blit(scaled_bullet, (1505, 5))
+        #     self.screen.blit(scaled_bullet, (1405, 5))
+        # elif self.weapon.bullet_count == 2:
+        #     self.screen.blit(scaled_bullet, (1605, 5))
+        #     self.screen.blit(scaled_bullet, (1505, 5))
+        # elif self.weapon.bullet_count == 1:
+        #     self.screen.blit(scaled_bullet, (1605, 5))
+
 
 
 class Projectile:
@@ -412,11 +445,6 @@ def draw_background(screen, grid, room_number, door_open=True):
     screen.blit(text, textpos)
 
 
-difficulty = [1, 2, 3, 4]
-Player_reload = pygame.USEREVENT + 0
-enemy_bullets = []
-
-
 def main():
     global floor_img, left_wall_img, right_wall_img, top_wall_img, bottom_wall_img, left_door_img
     global left_top_corner_img, right_top_corner_img, left_bottom_corner_img, right_bottom_corner_img, right_door_img
@@ -441,6 +469,7 @@ def main():
     right_top_corner_img = pygame.transform.flip(left_top_corner_img, True, False)
     left_bottom_corner_img = pygame.transform.scale(left_bottom_corner_img, (square_length, square_length*19/30))
     right_bottom_corner_img = pygame.transform.flip(left_bottom_corner_img, True, False)
+
 
 
     while player.health > 0:
@@ -593,6 +622,8 @@ def main():
                 player.health -= bullet.damage
                 enemy_bullets.remove(bullet)
 
+
+        # draw_bottom_walls(screen, grid, len(enemies) == 0)
         pygame.display.flip()
         fps_clock.tick(fps)
 
