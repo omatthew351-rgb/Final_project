@@ -14,6 +14,21 @@ ENEMY_TYPES = {
     3: [3, 15, 5, 1, 1, 3000, (0, 0, 255), ["ranged"]],
 }
 
+difficulty = [1, 2, 3, 4]
+Player_reload = pygame.USEREVENT + 0
+enemy_bullets = []
+
+pygame.font.init()
+room_number_font = pygame.font.SysFont("Comic Sans MS", 200)
+difficulty_font = pygame.font.SysFont("Comic Sans MS", 20)
+
+# player_img = pygame.transform.scale(pygame.image.load('player.png'), (64, 64))
+floor_img = pygame.image.load('floor.png')
+left_wall_img = pygame.image.load('left_wall.png')
+top_wall_img = pygame.image.load('top_wall.png')
+bottom_wall_img = pygame.image.load('bottom_wall.png')
+left_top_corner_img = pygame.image.load('left_top_corner.png')
+left_bottom_corner_img = pygame.image.load('left_bottom_corner.png')
 
 class Player:
     def __init__(self, screen: pygame.Surface):
@@ -23,8 +38,8 @@ class Player:
         self.vy = 0
         self.health = 3
         self.screen = screen
-        self.r = 20
         self.tile_length = self.screen.get_height() / 10
+        self.r = self.tile_length/3
         self.weapon = Weapon(3, 1000, 5000, 5)
         self.trap_cd = 1000
         self.last_trap = -10000
@@ -134,6 +149,7 @@ class Player:
         self.vy *= 0.8
 
         pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
+        # self.screen.blit(player_img, pygame.Rect(self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
         pygame.draw.rect(self.screen, "#00ff00", (5, 5, 20, 20))
         pygame.draw.rect(self.screen, "#00ff00", (55, 5, 20, 20))
         pygame.draw.rect(self.screen, "#00ff00", (105, 5, 20, 20))
@@ -195,6 +211,8 @@ class Enemy:
         self.last_attack_time = pygame.time.get_ticks()
         self.color = color
         self.special_tags = [] if special_tags is None else special_tags
+        self.tile_length = self.screen.get_height() / 10
+        self.r = self.r/60*self.tile_length
 
     def update(self, player_x, player_y) -> None:
         global enemy_bullets
@@ -308,7 +326,7 @@ def change_room(screen, player, old_grid, new_grid, room_number, direction):
     player.y += screen.get_height() * direction[1]
 
 
-def draw_background(screen, grid, room_number):
+def draw_background(screen, grid, room_number, door_open=True):
     screen.fill((100, 100, 100))
     square_length = screen.get_width() / 16
     pygame.draw.rect(
@@ -320,17 +338,20 @@ def draw_background(screen, grid, room_number):
     for y, row in enumerate(grid):
         for x, value in enumerate(row):
             if value == 0:
-                pygame.draw.rect(
-                    screen,
-                    (100, 100, 100),
-                    (
-                        x * square_length,
-                        y * square_length,
-                        square_length,
-                        square_length,
-                    ),
-                    3,
-                )
+                screen.blit(floor_img, (x * square_length, y * square_length, square_length, square_length))
+                if x == 0:
+                    screen.blit(left_wall_img, (x * square_length, y * square_length, square_length, square_length))
+                elif x == 15:
+                    screen.blit(right_wall_img, (x * square_length, y * square_length, square_length, square_length))
+
+                if y == 0:
+                    screen.blit(top_wall_img, (x * square_length, y * square_length, square_length, square_length))
+
+                if x == 0 and y == 0:
+                    screen.blit(left_top_corner_img, (x * square_length, y * square_length, square_length, square_length))
+                elif x == 15 and y == 0:
+                    screen.blit(right_top_corner_img, (x * square_length, y * square_length, square_length, square_length))
+
             elif value == 1:
                 pygame.draw.rect(
                     screen,
@@ -344,51 +365,99 @@ def draw_background(screen, grid, room_number):
                         square_length,
                     ),
                 )
-    room_number_font = pygame.font.SysFont("Comic Sans MS", 250)
-    text = room_number_font.render(str(room_number), True, (255, 255, 255))
+    
+    if door_open:
+        screen.blit(floor_img, (7 * square_length, 0, square_length, square_length))
+        screen.blit(floor_img, (8 * square_length, 0, square_length, square_length))
+        screen.blit(floor_img, (0 * square_length, 4*square_length, square_length, square_length))
+        screen.blit(floor_img, (0 * square_length, 5*square_length, square_length, square_length))
+        screen.blit(floor_img, (15 * square_length, 4*square_length, square_length, square_length))
+        screen.blit(floor_img, (15 * square_length, 5*square_length, square_length, square_length))
+
+    text = room_number_font.render(str(room_number), True, (30, 30, 30))
     textpos = text.get_rect(
         centerx=screen.get_width() / 2, centery=screen.get_height() / 2
     )
     screen.blit(text, textpos)
+    if door_open:
+        text = difficulty_font.render(str(difficulty[0]), True, (200, 200, 200))
+        textpos = text.get_rect(centerx=screen.get_width() / 2, centery=square_length / 4)
+        screen.blit(text, textpos)
+        text = difficulty_font.render(str(difficulty[3]), True, (200, 200, 200))
+        textpos = text.get_rect(
+            centerx=screen.get_width() - square_length / 4, centery=screen.get_height() / 2
+        )
+        screen.blit(text, textpos)
+        text = difficulty_font.render(str(difficulty[2]), True, (200, 200, 200))
+        textpos = text.get_rect(centerx=square_length / 4, centery=screen.get_height() / 2)
+        screen.blit(text, textpos)
+    else:
+        text = difficulty_font.render(str(difficulty[0]), True, (30, 30, 30))
+        textpos = text.get_rect(centerx=screen.get_width() / 2, centery=square_length / 4)
+        screen.blit(text, textpos)
+        text = difficulty_font.render(str(difficulty[2]), True, (30, 30, 30))
+        textpos = text.get_rect(centerx=square_length / 4, centery=screen.get_height() / 2)
+        screen.blit(text, textpos)
+        text = difficulty_font.render(str(difficulty[3]), True, (30, 30, 30))
+        textpos = text.get_rect(
+            centerx=screen.get_width() - square_length / 4, centery=screen.get_height() / 2
+        )
+        screen.blit(text, textpos)
+    
 
-    difficulty_font = pygame.font.SysFont("Comic Sans MS", 20)
-    text = difficulty_font.render(str(difficulty[0]), True, (255, 255, 255))
-    textpos = text.get_rect(centerx=screen.get_width() / 2, centery=square_length / 2)
-    screen.blit(text, textpos)
-    text = difficulty_font.render(str(difficulty[3]), True, (255, 255, 255))
-    textpos = text.get_rect(
-        centerx=screen.get_width() - square_length / 2, centery=screen.get_height() / 2
-    )
-    screen.blit(text, textpos)
-    text = difficulty_font.render(str(difficulty[1]), True, (255, 255, 255))
-    textpos = text.get_rect(
-        centerx=screen.get_width() / 2, centery=screen.get_height() - square_length / 2
-    )
-    screen.blit(text, textpos)
-    text = difficulty_font.render(str(difficulty[2]), True, (255, 255, 255))
-    textpos = text.get_rect(centerx=square_length / 2, centery=screen.get_height() / 2)
-    screen.blit(text, textpos)
-
-
-difficulty = [1, 2, 3, 4]
-Player_reload = pygame.USEREVENT + 0
-enemy_bullets = []
+def draw_bottom_walls(screen, grid, door_open=True): # to try and look 3d
+    square_length = screen.get_width() / 16
+    for x, value in enumerate(grid[-1]):
+        if value == 0:
+            if (x == 7 or x == 8) and door_open:
+                continue
+            screen.blit(bottom_wall_img, (x * square_length, 9 * square_length+11/30*square_length, square_length, square_length))
+            if x == 0:
+                screen.blit(left_bottom_corner_img, (x * square_length, 9 * square_length+11/30*square_length, square_length, square_length))
+            elif x == 15:
+                screen.blit(right_bottom_corner_img, (x * square_length, 9 * square_length+11/30*square_length, square_length, square_length))
+    if door_open:
+        text = difficulty_font.render(str(difficulty[1]), True, (200, 200, 200))
+        textpos = text.get_rect(
+            centerx=screen.get_width() / 2, centery=screen.get_height() - square_length / 4
+        )
+        screen.blit(text, textpos)
+    else:
+        text = difficulty_font.render(str(difficulty[1]), True, (30, 30, 30))
+        textpos = text.get_rect(
+            centerx=screen.get_width() / 2, centery=screen.get_height() - square_length / 4
+        )
+        screen.blit(text, textpos)
 
 
 def main():
+    global floor_img, left_wall_img, right_wall_img, top_wall_img, bottom_wall_img, left_door_img
+    global left_top_corner_img, right_top_corner_img, left_bottom_corner_img, right_bottom_corner_img, right_door_img
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     room_number = 0
+    print(screen.get_width(), screen.get_height())
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
     bullets = []
     enemies: list[Enemy] = []
-    square_length = screen.get_width() / 16
+    square_length = screen.get_width() / 16  + 1
+
+    floor_img = pygame.transform.scale(floor_img, (square_length, square_length))
+    left_wall_img = pygame.transform.scale(left_wall_img, (square_length, square_length))
+    right_wall_img = pygame.transform.flip(left_wall_img, True, False)
+    top_wall_img = pygame.transform.scale(top_wall_img, (square_length, square_length))
+    bottom_wall_img = pygame.transform.scale(bottom_wall_img, (square_length, square_length*19/30))
+    left_top_corner_img = pygame.transform.scale(left_top_corner_img, (square_length, square_length))
+    right_top_corner_img = pygame.transform.flip(left_top_corner_img, True, False)
+    left_bottom_corner_img = pygame.transform.scale(left_bottom_corner_img, (square_length, square_length*19/30))
+    right_bottom_corner_img = pygame.transform.flip(left_bottom_corner_img, True, False)
+
 
     while player.health > 0:
-        draw_background(screen, grid, room_number)
+        draw_background(screen, grid, room_number, len(enemies) == 0)
 
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
@@ -537,6 +606,8 @@ def main():
                 player.health -= bullet.damage
                 enemy_bullets.remove(bullet)
 
+
+        draw_bottom_walls(screen, grid, len(enemies) == 0)
         pygame.display.flip()
         fps_clock.tick(fps)
 
