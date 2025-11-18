@@ -33,7 +33,8 @@ left_top_corner_img = pygame.image.load('left_top_corner.png')
 left_bottom_corner_img = pygame.image.load('left_bottom_corner.png')
 heart = pygame.image.load('2025_11_17_0j9_Kleki.png')
 bullet = pygame.image.load('2025_11_18_0i8_Kleki.png')
-
+player_sprite = pygame.image.load('pixilart-drawing (1).png')
+enemy_sprite = pygame.image.load('pixil-frame-0.png')
 class Player:
     def __init__(self, screen: pygame.Surface):
         self.x = screen.get_width() / 2
@@ -152,7 +153,9 @@ class Player:
         self.vx *= 0.8
         self.vy *= 0.8
 
-        pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
+        # pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
+        scaled_player = pygame.transform.scale(player_sprite, ((self.tile_length*2)/3, (self.tile_length*2)/3))
+        self.screen.blit(scaled_player, (self.x-self.r, self.y-self.r))
 
         # pygame.draw.rect(self.screen, "#00ff00", (5, 5, 20, 20))
         # pygame.draw.rect(self.screen, "#00ff00", (55, 5, 20, 20))
@@ -176,33 +179,6 @@ class Player:
         
         for i in range(self.weapon.bullet_count):
             self.screen.blit(scaled_bullet, (1605-i*50, 5))
-        # if self.weapon.bullet_count == 6:
-        #     self.screen.blit(scaled_bullet, (1105, 5))
-        #     self.screen.blit(scaled_bullet, (1205, 5))
-        #     self.screen.blit(scaled_bullet, (1305, 5))
-        #     self.screen.blit(scaled_bullet, (1405, 5))
-        #     self.screen.blit(scaled_bullet, (1505, 5))
-        #     self.screen.blit(scaled_bullet, (1605, 5))
-        # elif self.weapon.bullet_count == 5:
-        #     self.screen.blit(scaled_bullet, (1205, 5))
-        #     self.screen.blit(scaled_bullet, (1305, 5))
-        #     self.screen.blit(scaled_bullet, (1405, 5))
-        #     self.screen.blit(scaled_bullet, (1505, 5))
-        #     self.screen.blit(scaled_bullet, (1605, 5))
-        # elif self.weapon.bullet_count == 4:
-        #     self.screen.blit(scaled_bullet, (1605, 5))
-        #     self.screen.blit(scaled_bullet, (1305, 5))
-        #     self.screen.blit(scaled_bullet, (1405, 5))
-        #     self.screen.blit(scaled_bullet, (1505, 5))
-        # elif self.weapon.bullet_count == 3:
-        #     self.screen.blit(scaled_bullet, (1605, 5))
-        #     self.screen.blit(scaled_bullet, (1505, 5))
-        #     self.screen.blit(scaled_bullet, (1405, 5))
-        # elif self.weapon.bullet_count == 2:
-        #     self.screen.blit(scaled_bullet, (1605, 5))
-        #     self.screen.blit(scaled_bullet, (1505, 5))
-        # elif self.weapon.bullet_count == 1:
-        #     self.screen.blit(scaled_bullet, (1605, 5))
 
 
 
@@ -623,7 +599,6 @@ def main():
                 enemy_bullets.remove(bullet)
 
 
-        # draw_bottom_walls(screen, grid, len(enemies) == 0)
         pygame.display.flip()
         fps_clock.tick(fps)
 
