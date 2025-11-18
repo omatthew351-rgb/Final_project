@@ -5,6 +5,9 @@ import pygame.locals
 import random
 import math
 
+image = pygame.image.load('2025_11_17_0j9_Kleki.png')
+
+
 
 WIDTH, HEIGHT = 800, 500
 #  r=20, health=3, speed=3, damage=1, cooldown=1000, color=(255, 0, 0), special_tags=None
@@ -134,6 +137,9 @@ class Player:
         self.vy *= 0.8
 
         pygame.draw.rect(self.screen, "#1f74f5", (self.x-self.r, self.y-self.r, 2*self.r, 2*self.r))
+        # self.screen.blit(image, (5, 5))
+        # self.screen.blit(image, (55, 5))
+        # self.screen.blit(image, (105, 5))
         pygame.draw.rect(self.screen, "#00ff00", (5, 5, 20, 20))
         pygame.draw.rect(self.screen, "#00ff00", (55, 5, 20, 20))
         pygame.draw.rect(self.screen, "#00ff00", (105, 5, 20, 20))
@@ -141,7 +147,11 @@ class Player:
             pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))
         if self.health == 1:
             pygame.draw.rect(self.screen, "#ff0000", (55, 5, 20, 20))
-            pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))
+            pygame.draw.rect(self.screen, "#ff0000", (105, 5, 20, 20))                      #left off here 11/17
+        # image = pygame.Surface((100, 60))
+        # image.fill(pygame.Color('sienna2'))
+        # pygame.draw.circle(image, pygame.Color('royalblue2'), (50, 30), 20)
+        # image = pygame.transform.scale(image, (50, 30))
 
 
 class Projectile:
