@@ -546,7 +546,6 @@ def main():
     player_sprite = pygame.transform.scale(player_sprite, ((square_length*2)/3, (square_length*2)/3))
     floor_trap_img = pygame.transform.scale(floor_trap_img, (square_length, square_length))
     floor_safe_trap_img = pygame.transform.scale(floor_safe_trap_img, (square_length, square_length))
-
     while player.health > 0:
         draw_background(screen, grid, room_number, len(enemies) == 0)
 
