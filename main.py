@@ -37,6 +37,8 @@ dead_heart_img = heart = pygame.image.load('dead_heart.png')
 bullet = pygame.image.load('2025_11_18_0i8_Kleki.png')
 player_sprite = pygame.image.load('pixilart-drawing (1).png')
 enemy_sprite = pygame.image.load('pixil-frame-0.png')
+floor_trap_img = pygame.image.load('floor_trap.png')
+floor_safe_trap_img = pygame.image.load('floor_safe_trap.png')
 
 
 class Player:
@@ -68,7 +70,6 @@ class Player:
                 ax += self.speed
             if ax != 0 and ay != 0:
                 acceleration = pygame.Vector2(ax, ay).clamp_magnitude(self.speed)
-                print(acceleration)
                 ax = acceleration.x
                 ay = acceleration.y
             self.vx += ax
@@ -268,8 +269,63 @@ class Enemy:
         dist_x = player_x - self.x
         dist_y = player_y - self.y
         length = math.sqrt(dist_x**2 + dist_y**2)
-        self.x += dist_x / length * self.speed
-        self.y += dist_y / length * self.speed
+        if "ranged" in self.special_tags:
+            if length < self.tile_length*5:
+                self.x -= dist_x / length * self.speed
+                self.y -= dist_y / length * self.speed
+            elif length < self.tile_length*7:
+                self.y -= dist_x / length * self.speed
+                self.x += dist_y / length * self.speed
+            elif length < self.tile_length*9:
+                self.y += dist_x / length * self.speed
+                self.x -= dist_y / length * self.speed
+            elif length < self.tile_length*11:
+                self.y -= dist_x / length * self.speed
+                self.x += dist_y / length * self.speed
+            elif length < self.tile_length*13:
+                self.y += dist_x / length * self.speed
+                self.x -= dist_y / length * self.speed
+            else:
+                self.y -= dist_x / length * self.speed
+                self.x += dist_y / length * self.speed
+        elif self.type == 1:
+            if length < self.tile_length*5:
+                self.x += dist_x / length * self.speed * 1/4
+                self.y += dist_y / length * self.speed * 1/4
+            elif length < self.tile_length*7:
+                self.y -= dist_x / length * self.speed * 1/4
+                self.x += dist_y / length * self.speed * 1/4
+            elif length < self.tile_length*9:
+                self.y += dist_x / length * self.speed * 1/4
+                self.x -= dist_y / length * self.speed * 1/4
+            elif length < self.tile_length*11:
+                self.y -= dist_x / length * self.speed * 1/4
+                self.x += dist_y / length * self.speed * 1/4
+            elif length < self.tile_length*13:
+                self.y += dist_x / length * self.speed * 1/4
+                self.x -= dist_y / length * self.speed * 1/4
+            else:
+                self.y -= dist_x / length * self.speed * 1/4
+                self.x += dist_y / length * self.speed * 1/4
+            self.x += dist_x / length * self.speed * 3/4
+            self.y += dist_y / length * self.speed * 3/4
+        else:
+            self.x += dist_x / length * self.speed
+            self.y += dist_y / length * self.speed
+
+        if self.x < self.tile_length / 2 + self.r:
+            self.x = self.tile_length / 2 + self.r
+            self.vx = 0
+        elif self.x > self.screen.get_width() - self.tile_length / 2 - self.r:
+            self.x = self.screen.get_width() - self.tile_length / 2 - self.r
+            self.vx = 0
+
+        if self.y < self.tile_length / 2 + self.r:
+            self.y = self.tile_length / 2 + self.r
+            self.vy = 0
+        if self.y > self.screen.get_height() - self.tile_length / 2 - self.r:
+            self.y = self.screen.get_height() - self.tile_length / 2 - self.r
+            self.vy = 0
         pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.r)
         health_bar_length = self.tile_length*3/4
         health_bar_height = health_bar_length/8
@@ -317,12 +373,15 @@ class Weapon:
 
 def generate_enemies(screen, player_pos, room_num=1, difficulty=1) -> list[Enemy]:
     enemies = []
+    square_length = screen.get_width() / 16
     level = room_num//10+1
     room_num %= 10
-    for _ in range(int(room_num**1.1 + difficulty*(room_num/5)**(1.25))):
+    print(room_num**1.01, difficulty/2*(room_num/5)**(1.2))
+    for _ in range(int(room_num**1.05 + difficulty*(room_num/5)**(1.2))):
+
         enemy_stats = ENEMY_TYPES[random.choice(list(ENEMY_TYPES.keys()))]
         enemy = Enemy(screen, *enemy_stats)
-        while math.dist((player_pos), (enemy.x, enemy.y)) < 300:
+        while math.dist((player_pos), (enemy.x, enemy.y)) < square_length*6:
             enemy = Enemy(screen, *enemy_stats)
         enemy.health *= 2**(level-1)
         enemy.max_health *= 2**(level-1)
@@ -373,7 +432,8 @@ def change_room(screen, player, old_grid, new_grid, room_number, direction):
                     sys.exit()
     screen.blit(new_room)
     player.upgrade(random.randint(1, 5))
-    
+
+
 def draw_background(screen, grid, room_number, door_open=True):
     screen.fill((100, 100, 100))
     square_length = screen.get_width() / 16
@@ -401,18 +461,9 @@ def draw_background(screen, grid, room_number, door_open=True):
                     screen.blit(right_top_corner_img, (x * square_length, y * square_length, square_length, square_length))
 
             elif value == 1:
-                pygame.draw.rect(
-                    screen,
-                    (100, 100, 100), (x*square_length, y*square_length, square_length, square_length))
+                screen.blit(floor_safe_trap_img, (x * square_length, y * square_length, square_length, square_length))
             elif value == 2:
-                pygame.draw.rect(screen, (255, 0, 0),
-                    (
-                        x * square_length,
-                        y * square_length,
-                        square_length,
-                        square_length,
-                    ),
-                )
+                screen.blit(floor_trap_img, (x * square_length, y * square_length, square_length, square_length))
     
     if door_open:
         screen.blit(floor_img, (7 * square_length, 0, square_length, square_length))
@@ -465,20 +516,21 @@ def draw_bottom_wall(screen, grid, door_open):
 
 
 def main():
-    global floor_img, left_wall_img, right_wall_img, top_wall_img, bottom_wall_img, left_door_img, player_sprite
+    global floor_img, left_wall_img, right_wall_img, top_wall_img, bottom_wall_img, left_door_img, player_sprite, floor_trap_img, floor_safe_trap_img
     global left_top_corner_img, right_top_corner_img, left_bottom_corner_img, right_bottom_corner_img, right_door_img, heart_img, dead_heart_img
     global enemy_bullets
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    room_number = 0
+    room_number = 5
     print(screen.get_width(), screen.get_height())
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
     bullets = []
     enemies: list[Enemy] = []
-    square_length = screen.get_width() / 16  + 1
+    square_length = screen.get_width() / 16 + 1
+    current_difficulty = 0
 
     floor_img = pygame.transform.scale(floor_img, (square_length, square_length))
     left_wall_img = pygame.transform.scale(left_wall_img, (square_length, square_length))
@@ -492,7 +544,8 @@ def main():
     heart_img = pygame.transform.scale(heart_img, (square_length, square_length))
     dead_heart_img = pygame.transform.scale(dead_heart_img, (square_length, square_length))
     player_sprite = pygame.transform.scale(player_sprite, ((square_length*2)/3, (square_length*2)/3))
-
+    floor_trap_img = pygame.transform.scale(floor_trap_img, (square_length, square_length))
+    floor_safe_trap_img = pygame.transform.scale(floor_safe_trap_img, (square_length, square_length))
 
     while player.health > 0:
         draw_background(screen, grid, room_number, len(enemies) == 0)
@@ -554,6 +607,7 @@ def main():
                 grid = new_grid
                 room_number += 1
                 enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[0])
+                current_difficulty = difficulty[0]
                 random.shuffle(difficulty)
             elif player.y - player.r > screen.get_height():
                 direction = (0, -1)
@@ -565,6 +619,7 @@ def main():
                 grid = new_grid
                 room_number += 1
                 enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[1])
+                current_difficulty = difficulty[1]
                 random.shuffle(difficulty)
             if player.x + player.r < 0:
                 direction = (1, 0)
@@ -576,6 +631,7 @@ def main():
                 grid = new_grid
                 room_number += 1
                 enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[2])
+                current_difficulty = difficulty[2]
                 random.shuffle(difficulty)
             elif player.x - player.r > screen.get_width():
                 direction = (-1, 0)
@@ -587,6 +643,7 @@ def main():
                 grid = new_grid
                 room_number += 1
                 enemies = generate_enemies(screen, (player.x, player.y), room_number, difficulty[3])
+                current_difficulty = difficulty[3]
                 random.shuffle(difficulty)
 
         for enemy in enemies:
@@ -634,7 +691,7 @@ def main():
                     enemies[enemies.index(enemy)].health -= bullet.damage
                     if enemies[enemies.index(enemy)].health <= 0:
                         enemies.remove(enemy)
-                        if random.randint(1, 5) == 1:
+                        if random.randint(1, 8) <= current_difficulty:
                             player.upgrade(random.randint(1, 5))
                     bullets.remove(bullet)
                     break
