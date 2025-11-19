@@ -272,6 +272,7 @@ class Enemy:
         self.r = self.r/60*self.tile_length
 
     def update(self, player_x, player_y) -> None:
+        
         global enemy_bullets
         dist_x = player_x - self.x
         dist_y = player_y - self.y
@@ -333,7 +334,19 @@ class Enemy:
         if self.y > self.screen.get_height() - self.tile_length / 2 - self.r:
             self.y = self.screen.get_height() - self.tile_length / 2 - self.r
             self.vy = 0
-        pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.r)
+        
+        square_length = self.screen.get_width() / 16
+        if self.type == 1 or self.type == 3:
+            scale_size = ((square_length * 2) / 3, (square_length * 2) / 3)
+            enemy_sprite_scale = pygame.transform.scale(enemy_sprite, scale_size)
+            self.screen.blit(enemy_sprite_scale, (self.x - scale_size[0] / 2, self.y - scale_size[1] / 2))
+        elif self.type == 2:
+            scale_size = ((square_length * 5) / 6, (square_length * 5) / 6)
+            enemy_sprite_scale = pygame.transform.scale(enemy_sprite, scale_size)
+            self.screen.blit(enemy_sprite_scale, (self.x - scale_size[0] / 2, self.y - scale_size[1] / 2))
+
+
+
         health_bar_length = self.tile_length*3/4
         health_bar_height = health_bar_length/8
         health_bar_x = self.x - health_bar_length/2
@@ -437,7 +450,7 @@ def change_room(screen, player, old_grid, new_grid, room_number, direction):
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-    screen.blit(new_room)
+    screen.blit(new_room, (0, 0))
     player.upgrade(random.randint(1, 5))
 
 
@@ -535,7 +548,7 @@ def main():
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
-    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    screen = pygame.display.set_mode((1600, 1000), pygame.FULLSCREEN)
     room_number = 5
     print(screen.get_width(), screen.get_height())
     player = Player(screen)
@@ -559,6 +572,7 @@ def main():
     player_sprite = pygame.transform.scale(player_sprite, ((square_length*2)/3, (square_length*2)/3))
     floor_trap_img = pygame.transform.scale(floor_trap_img, (square_length, square_length))
     floor_safe_trap_img = pygame.transform.scale(floor_safe_trap_img, (square_length, square_length))
+
     while player.health > 0:
         draw_background(screen, grid, room_number, len(enemies) == 0)
 
