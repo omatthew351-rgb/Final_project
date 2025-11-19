@@ -40,6 +40,13 @@ enemy_sprite = pygame.image.load('pixil-frame-0.png')
 floor_trap_img = pygame.image.load('floor_trap.png')
 floor_safe_trap_img = pygame.image.load('floor_safe_trap.png')
 
+pygame.mixer.init()
+playerShoot = pygame.mixer.Sound("playerShoot.wav")
+playerHurt = pygame.mixer.Sound("playerHurt.wav")
+enemyHurt = pygame.mixer.Sound("enemyHurt.wav")
+enemyDeath = pygame.mixer.Sound("enemyDeath.wav")
+powerUp = pygame.mixer.Sound("powerUp.wav")
+
 
 class Player:
     def __init__(self, screen: pygame.Surface):
@@ -192,7 +199,7 @@ class Player:
 
     def upgrade(self, upgrade):
         self.last_upgrade = pygame.time.get_ticks()
-        print(upgrade)
+        powerUp.play()
         if upgrade == 1:
             self.weapon.damage *= 1.1
             self.upgrade_text = difficulty_font.render("Bullet damage increased", True, (255, 255, 255))
@@ -477,6 +484,12 @@ def draw_background(screen, grid, room_number, door_open=True):
     textpos = text.get_rect(
         centerx=screen.get_width() / 2, centery=screen.get_height() / 2
     )
+    text.set_alpha(127)
+    # surface=pygame.Surface(text.get_width(), text.get_height())
+    # surface.fill((255, 255, 255))
+    # surface.blit(textsurface, pygame.Rect(0, 0, 10, 10))
+    # surface.set_alpha(50)
+    # window.blit(surface, pygame.Rect(0, 30, 10, 10))
     screen.blit(text, textpos)
 
     difficulty_font = pygame.font.SysFont("Comic Sans MS", 20)
@@ -582,6 +595,10 @@ def main():
                     )
                     player.weapon.last_attack_time = pygame.time.get_ticks()
                     player.weapon.bullet_count -= 1
+                    playerShoot.play()
+                    direction = pygame.Vector2((pos[0] - player.x, pos[1] - player.y)).normalize() * 3
+                    player.vx -= direction.x
+                    player.vy -= direction.y
                 elif not player.weapon.reloading:
                     player.weapon.reloading = True
                     pygame.time.set_timer(Player_reload, int(player.weapon.reload_time))
@@ -595,7 +612,9 @@ def main():
                 if pygame.Rect((player.x-player.r, player.y-player.r, 2*player.r, 2*player.r)).colliderect(pygame.Rect(c*square_length, r*square_length, square_length, square_length)):
                     player.health -= 1
                     grid[r][c] = 1
-                    print(player.health)
+                    playerHurt.play()
+                    time.sleep(0.1)
+
         if len(enemies) == 0:
             if player.y + player.r < 0:
                 direction = (0, 1)
@@ -651,6 +670,8 @@ def main():
             if math.dist((player.x, player.y), (enemy.x, enemy.y)) < player.r + enemy.r:
                 if pygame.time.get_ticks() - enemy.last_attack_time > enemy.cooldown:
                     player.health -= enemy.damage
+                    playerHurt.play()
+                    time.sleep(0.1)
                     enemy.last_attack_time = pygame.time.get_ticks()
                 overlap = (
                     -math.dist((player.x, player.y), (enemy.x, enemy.y))
@@ -691,8 +712,10 @@ def main():
                     enemies[enemies.index(enemy)].health -= bullet.damage
                     if enemies[enemies.index(enemy)].health <= 0:
                         enemies.remove(enemy)
+                        enemyDeath.play()
                         if random.randint(1, 8) <= current_difficulty:
                             player.upgrade(random.randint(1, 5))
+                    enemyHurt.play()
                     bullets.remove(bullet)
                     break
         bullets = [bullet for bullet in bullets if not bullet.in_border()]
@@ -702,6 +725,8 @@ def main():
             if math.dist((bullet.pos), (player.x, player.y)) < bullet.r + player.r:
                 player.health -= bullet.damage
                 enemy_bullets.remove(bullet)
+                playerHurt.play()
+                time.sleep(0.1)
         enemy_bullets = [bullet for bullet in enemy_bullets if not bullet.in_border()]
 
         draw_bottom_wall(screen, grid, len(enemies) == 0)
