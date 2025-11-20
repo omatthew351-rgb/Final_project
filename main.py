@@ -549,10 +549,11 @@ def main():
     fps_clock = pygame.time.Clock()
     pygame.init()
     screen = pygame.display.set_mode((1600, 1000), pygame.FULLSCREEN)
-    room_number = 5
+    room_number = 0
     print(screen.get_width(), screen.get_height())
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
+    grid[5][3] = 2
     bullets = []
     enemies: list[Enemy] = []
     square_length = screen.get_width() / 16 + 1
@@ -626,7 +627,10 @@ def main():
                     player.health -= 1
                     grid[r][c] = 1
                     playerHurt.play()
-                    time.sleep(0.1)
+                    player.vx *= -2
+                    player.vy *= -2
+                    pygame.display.flip()
+                    time.sleep(0.2)
 
         if len(enemies) == 0:
             if player.y + player.r < 0:
@@ -684,7 +688,8 @@ def main():
                 if pygame.time.get_ticks() - enemy.last_attack_time > enemy.cooldown:
                     player.health -= enemy.damage
                     playerHurt.play()
-                    time.sleep(0.1)
+                    pygame.display.flip()
+                    time.sleep(0.2)
                     enemy.last_attack_time = pygame.time.get_ticks()
                 overlap = (
                     -math.dist((player.x, player.y), (enemy.x, enemy.y))
@@ -698,6 +703,8 @@ def main():
                 enemy.y -= to_player_vector.y * overlap / 2
                 player.x += to_player_vector.x * overlap / 2
                 player.y += to_player_vector.y * overlap / 2
+                player.vx = to_player_vector.x * player.r / 2
+                player.vy = to_player_vector.y * player.r / 2
             for other in enemies:
                 if enemy is other:
                     continue
@@ -726,10 +733,15 @@ def main():
                     if enemies[enemies.index(enemy)].health <= 0:
                         enemies.remove(enemy)
                         enemyDeath.play()
+                        print(min(len(enemies), 1))
+                        pygame.display.flip()
+                        time.sleep(min((len(enemies)/10)**2, 1))
                         if random.randint(1, 8) <= current_difficulty:
                             player.upgrade(random.randint(1, 5))
-                    enemyHurt.play()
+                    else:
+                        enemyHurt.play()
                     bullets.remove(bullet)
+                    
                     break
         bullets = [bullet for bullet in bullets if not bullet.in_border()]
 
@@ -739,7 +751,13 @@ def main():
                 player.health -= bullet.damage
                 enemy_bullets.remove(bullet)
                 playerHurt.play()
-                time.sleep(0.1)
+                pygame.display.flip()
+                time.sleep(0.2)
+                to_player_vector = pygame.Vector2(
+                    player.x - bullet.pos.x, player.y - bullet.pos.y
+                ).normalize()
+                player.vx = bullet.direction.x * player.r / 2
+                player.vy = bullet.direction.y * player.r / 2
         enemy_bullets = [bullet for bullet in enemy_bullets if not bullet.in_border()]
 
         draw_bottom_wall(screen, grid, len(enemies) == 0)
