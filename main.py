@@ -36,7 +36,9 @@ heart_img = pygame.image.load('2025_11_17_0j9_Kleki.png')
 dead_heart_img = heart = pygame.image.load('dead_heart.png')
 bullet = pygame.image.load('2025_11_18_0i8_Kleki.png')
 player_sprite = pygame.image.load('pixilart-drawing (1).png')
-enemy_sprite = pygame.image.load('pixil-frame-0.png')
+enemy_sprite1 = pygame.image.load('enemy_fast.png')
+enemy_sprite2 = pygame.image.load('enemy_slow.png')
+enemy_sprite3 = pygame.image.load('enemy_range.png')
 floor_trap_img = pygame.image.load('floor_trap.png')
 floor_safe_trap_img = pygame.image.load('floor_safe_trap.png')
 
@@ -336,14 +338,19 @@ class Enemy:
             self.vy = 0
         
         square_length = self.screen.get_width() / 16
-        if self.type == 1 or self.type == 3:
+        if self.type == 1:
             scale_size = (self.r*2, self.r*2)
-            enemy_sprite_scale = pygame.transform.scale(enemy_sprite, scale_size)
+            enemy_sprite_scale = pygame.transform.scale(enemy_sprite1, scale_size)
             self.screen.blit(enemy_sprite_scale, (self.x - scale_size[0] / 2, self.y - scale_size[1] / 2))
         elif self.type == 2:
             scale_size = (self.r*2, self.r*2)
-            enemy_sprite_scale = pygame.transform.scale(enemy_sprite, scale_size)
+            enemy_sprite_scale = pygame.transform.scale(enemy_sprite2, scale_size)
             self.screen.blit(enemy_sprite_scale, (self.x - scale_size[0] / 2, self.y - scale_size[1] / 2))
+        elif self.type == 3:
+            scale_size = (self.r*2, self.r*2)
+            enemy_sprite_scale = pygame.transform.scale(enemy_sprite3, scale_size)
+            self.screen.blit(enemy_sprite_scale, (self.x - scale_size[0] / 2, self.y - scale_size[1] / 2))
+
 
 
 
