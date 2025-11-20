@@ -12,7 +12,7 @@ import time
 WIDTH, HEIGHT = 800, 500
 #  r=20, health=3, speed=3, damage=1, cooldown=1000, color=(255, 0, 0), special_tags=None
 ENEMY_TYPES = {
-    1: [1, 15, 3, 3, 1, 1000, (255, 0, 0)],
+    1: [1, 15, 3, 4, 1, 1000, (255, 0, 0)],
     2: [2, 20, 10, 1.5, 1, 1000, (0, 255, 0)],
     3: [3, 15, 5, 1, 1, 3000, (0, 0, 255), ["ranged"]],
 }
@@ -337,11 +337,11 @@ class Enemy:
         
         square_length = self.screen.get_width() / 16
         if self.type == 1 or self.type == 3:
-            scale_size = ((square_length * 2) / 3, (square_length * 2) / 3)
+            scale_size = (self.r*2, self.r*2)
             enemy_sprite_scale = pygame.transform.scale(enemy_sprite, scale_size)
             self.screen.blit(enemy_sprite_scale, (self.x - scale_size[0] / 2, self.y - scale_size[1] / 2))
         elif self.type == 2:
-            scale_size = ((square_length * 5) / 6, (square_length * 5) / 6)
+            scale_size = (self.r*2, self.r*2)
             enemy_sprite_scale = pygame.transform.scale(enemy_sprite, scale_size)
             self.screen.blit(enemy_sprite_scale, (self.x - scale_size[0] / 2, self.y - scale_size[1] / 2))
 
