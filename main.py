@@ -20,6 +20,7 @@ ENEMY_TYPES = {
 difficulty = [1, 2, 3, 4]
 Player_reload = pygame.USEREVENT + 0
 enemy_bullets = []
+bullets = []
 
 pygame.font.init()
 room_number_font = pygame.font.SysFont("Comic Sans MS", 200)
@@ -48,6 +49,7 @@ playerHurt = pygame.mixer.Sound("playerHurt.wav")
 enemyHurt = pygame.mixer.Sound("enemyHurt.wav")
 enemyDeath = pygame.mixer.Sound("enemyDeath.wav")
 powerUp = pygame.mixer.Sound("powerUp.wav")
+reload = pygame.mixer.Sound("reload.wav")
 
 
 class Player:
@@ -217,7 +219,8 @@ class Player:
         elif upgrade == 5:
             self.speed += 0.1
             self.upgrade_text = difficulty_font.render("Speed increased", True, (255, 255, 255))
-        
+
+
 class Projectile:
     def __init__(self, screen, start_pos, direction, damage) -> None:
         self.pos = pygame.Vector2(start_pos)
@@ -404,7 +407,7 @@ def generate_enemies(screen, player_pos, room_num=1, difficulty=1) -> list[Enemy
     level = room_num//10+1
     room_num %= 10
     print(room_num**1.01, difficulty/2*(room_num/5)**(1.2))
-    for _ in range(int(room_num**1.05 + difficulty*(room_num/5)**(1.2))):
+    for _ in range(int((room_num+level)**1.05 + difficulty*(room_num/5)**(1.2))):
 
         enemy_stats = ENEMY_TYPES[random.choice(list(ENEMY_TYPES.keys()))]
         enemy = Enemy(screen, *enemy_stats)
@@ -417,14 +420,16 @@ def generate_enemies(screen, player_pos, room_num=1, difficulty=1) -> list[Enemy
 
 
 def change_room(screen, player, old_grid, new_grid, room_number, direction):
+    global bullets, enemy_bullets
+    bullets = []
+    enemy_bullets = []
     old_room = pygame.Surface((screen.get_width(), screen.get_height()))
     new_room = pygame.Surface((screen.get_width(), screen.get_height()))
     draw_background(old_room, old_grid, room_number)
     draw_background(new_room, new_grid, room_number + 1)
     draw_bottom_wall(old_room, old_grid, True)
     draw_bottom_wall(new_room, new_grid, True)
-    player.weapon.bullet_count = player.weapon.max_bullet
-    speed = screen.get_width()//700
+    speed = screen.get_width()//16//30
     for offset in range(
         0,
         max(
@@ -551,7 +556,7 @@ def draw_bottom_wall(screen, grid, door_open):
 def main():
     global floor_img, left_wall_img, right_wall_img, top_wall_img, bottom_wall_img, left_door_img, player_sprite, floor_trap_img, floor_safe_trap_img
     global left_top_corner_img, right_top_corner_img, left_bottom_corner_img, right_bottom_corner_img, right_door_img, heart_img, dead_heart_img
-    global enemy_bullets
+    global enemy_bullets, bullets
     fps = 60
     fps_clock = pygame.time.Clock()
     pygame.init()
@@ -561,7 +566,7 @@ def main():
     player = Player(screen)
     grid = [[0 for _ in range(16)] for _ in range(10)]
     grid[5][3] = 2
-    bullets = []
+    
     enemies: list[Enemy] = []
     square_length = screen.get_width() / 16 + 1
     current_difficulty = 0
@@ -597,8 +602,10 @@ def main():
                     pygame.quit()
                     sys.exit()
                 elif event.key == pygame.K_r:
-                    player.weapon.reloading = True
-                    pygame.time.set_timer(Player_reload, int(player.weapon.reload_time))        
+                    if not player.weapon.reloading and not player.weapon.bullet_count == player.weapon.max_bullet:
+                        player.weapon.reloading = True
+                        reload.play(loops=-1, maxtime=int(player.weapon.reload_time))
+                        pygame.time.set_timer(Player_reload, int(player.weapon.reload_time))        
         if pygame.mouse.get_pressed()[0]:
             if (
                 pygame.time.get_ticks() - player.weapon.last_attack_time
@@ -620,8 +627,9 @@ def main():
                     direction = pygame.Vector2((pos[0] - player.x, pos[1] - player.y)).normalize() * 3
                     player.vx -= direction.x
                     player.vy -= direction.y
-                elif not player.weapon.reloading:
+                elif not player.weapon.reloading and not player.weapon.bullet_count == player.weapon.max_bullet:
                     player.weapon.reloading = True
+                    reload.play(loops=-1, maxtime=int(player.weapon.reload_time))
                     pygame.time.set_timer(Player_reload, int(player.weapon.reload_time))
 
         keys_held = pygame.key.get_pressed()
@@ -732,25 +740,6 @@ def main():
                     other.x += to_other_vector.x * overlap / 2
                     other.y += to_other_vector.y * overlap / 2
 
-        for bullet in bullets.copy():
-            bullet.update()
-            for enemy in enemies.copy():
-                if math.dist((bullet.pos), (enemy.x, enemy.y)) < bullet.r + enemy.r:
-                    enemies[enemies.index(enemy)].health -= bullet.damage
-                    if enemies[enemies.index(enemy)].health <= 0:
-                        enemies.remove(enemy)
-                        enemyDeath.play()
-                        print(min(len(enemies), 1))
-                        pygame.display.flip()
-                        time.sleep(min((len(enemies)/10)**2, 1))
-                        if random.randint(1, 8) <= current_difficulty:
-                            player.upgrade(random.randint(1, 5))
-                    else:
-                        enemyHurt.play()
-                    bullets.remove(bullet)
-                    
-                    break
-        bullets = [bullet for bullet in bullets if not bullet.in_border()]
 
         for bullet in enemy_bullets.copy():
             bullet.update((255, 0, 0))
@@ -758,6 +747,7 @@ def main():
                 player.health -= bullet.damage
                 enemy_bullets.remove(bullet)
                 playerHurt.play()
+                draw_bottom_wall(screen, grid, len(enemies) == 0)
                 pygame.display.flip()
                 time.sleep(0.2)
                 to_player_vector = pygame.Vector2(
@@ -767,12 +757,33 @@ def main():
                 player.vy = bullet.direction.y * player.r / 2
         enemy_bullets = [bullet for bullet in enemy_bullets if not bullet.in_border()]
 
+        for bullet in bullets.copy():
+            bullet.update()
+            for enemy in enemies.copy():
+                if math.dist((bullet.pos), (enemy.x, enemy.y)) < bullet.r + enemy.r:
+                    enemies[enemies.index(enemy)].health -= bullet.damage
+                    if enemies[enemies.index(enemy)].health <= 0:
+                        enemies.remove(enemy)
+                        enemyDeath.play()
+                        draw_bottom_wall(screen, grid, len(enemies) == 0)
+                        pygame.display.flip()
+                        time.sleep(min((len(enemies)/10)**2, 0.8))
+                        if random.randint(1, 8) <= current_difficulty:
+                            player.upgrade(random.randint(1, 5))
+                    else:
+                        enemyHurt.play()
+                    bullets.remove(bullet)
+                    
+                    break
+        bullets = [bullet for bullet in bullets if not bullet.in_border()]
+
         draw_bottom_wall(screen, grid, len(enemies) == 0)
         pygame.display.flip()
         fps_clock.tick(fps)
 
         if player.weapon.bullet_count == 0 and not player.weapon.reloading:
             player.weapon.reloading = True
+            reload.play(loops=-1, maxtime=int(player.weapon.reload_time))
             pygame.time.set_timer(Player_reload, int(player.weapon.reload_time))  
 
 
