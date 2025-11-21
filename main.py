@@ -424,6 +424,20 @@ class Weapon:
         self.last_attack_time = -self.cooldown
         self.reloading = False
 
+PARTICLE_COLORS = [(255, 255, 255),(255, 255, 0), (255, 165, 0), (255, 200, 100), (255, 255, 165)]
+
+class Particle:
+    def __init__(self, screen, position, direction):
+        self.position = position
+        self.direction = direction*random.randint(2, 10)
+        self.r = random.randint(3, 15)
+        self.color = random.choice(PARTICLE_COLORS)
+        self.screen = screen
+
+    def update(self):
+        self.position += self.direction
+        self.r -= 1
+        pygame.draw.circle(self.screen, self.color, self.position, self.r)
 
 
 
@@ -633,6 +647,9 @@ def main():
     grid = [[0 for _ in range(16)] for _ in range(10)]
     square_length = screen.get_width() / 16 + 1
     current_difficulty = 0
+    particles = []
+    # particles = [Particle(screen, pygame.Vector2(500, 500), pygame.Vector2(random.uniform(-1, 1)*2, random.uniform(-1, 1)*2)) for _ in range(100)]
+    
 
     floor_img = pygame.transform.scale(floor_img, (square_length, square_length))
     left_wall_img = pygame.transform.scale(left_wall_img, (square_length, square_length))
@@ -817,6 +834,11 @@ def main():
             for enemy in enemies.copy():
                 if math.dist((bullet.pos), (enemy.x, enemy.y)) < bullet.r + enemy.r:
                     enemies[enemies.index(enemy)].health -= bullet.damage
+                    angle = math.atan2(bullet.direction.y, bullet.direction.x)
+                    for _ in range(100):
+                        angle_ = angle + random.uniform(-math.pi/4, math.pi/4)
+                        particles.append(Particle(screen, pygame.Vector2(bullet.pos.x, bullet.pos.y), pygame.Vector2(math.cos(angle_), math.sin(angle_))))
+                        particles[-1].update()
                     if enemies[enemies.index(enemy)].health <= 0:
                         enemies.remove(enemy)
                         if enemy.type == 0:
@@ -844,6 +866,9 @@ def main():
             playerHurt.play()
             pygame.display.flip()
             time.sleep(0.2)
+
+        for particle in particles:
+            particle.update()
 
         pygame.display.flip()
         fps_clock.tick(fps)
